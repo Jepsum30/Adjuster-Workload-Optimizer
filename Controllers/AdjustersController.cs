@@ -10,8 +10,7 @@ namespace AdjusterOptimizerAPI.Controllers
     /// Handles all operations related to adjusters, including
     /// CRUD actions and future workload/performance updates.
     /// </summary>
-    [RoleAuthorize("Admin")]
-    [RoleAuthorize("Manager")]
+    [RoleAuthorize("Admin", "Manager")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdjustersController : ControllerBase

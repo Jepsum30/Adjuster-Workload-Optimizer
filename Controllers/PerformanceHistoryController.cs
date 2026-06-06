@@ -6,8 +6,7 @@ using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
-    [RoleAuthorize("Admin")]
-    [RoleAuthorize("Supervisor")]
+    [RoleAuthorize("Admin", "Supervisor")]
     [Route("api/[controller]")]
     [ApiController]
     public class PerformanceHistoryController : ControllerBase
