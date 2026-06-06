@@ -20,6 +20,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
+// ADD SESSION SUPPORT
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.IdleTimeout = TimeSpan.FromHours(1);
+});
+
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -35,6 +45,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ENABLE SESSION MIDDLEWARE
+app.UseSession();
+
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();

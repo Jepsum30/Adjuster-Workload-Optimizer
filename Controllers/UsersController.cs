@@ -1,10 +1,12 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
+using AdjusterOptimizerAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
+    [RoleAuthorize("Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
