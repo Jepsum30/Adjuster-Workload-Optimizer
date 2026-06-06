@@ -1,5 +1,6 @@
 using AdjusterOptimizerAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using AdjusterOptimizerAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
+// REGISTER ASSIGNMENT ENGINE
+builder.Services.AddScoped<AssignmentEngine>();
 
 // ADD SESSION SUPPORT
 builder.Services.AddDistributedMemoryCache();
@@ -46,7 +49,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ENABLE SESSION MIDDLEWARE
+// ⭐ ENABLE SESSION MIDDLEWARE
 app.UseSession();
 
 app.UseAuthorization();

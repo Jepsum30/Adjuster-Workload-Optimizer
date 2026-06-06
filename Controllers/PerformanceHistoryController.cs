@@ -2,9 +2,12 @@ using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
+    [RoleAuthorize("Admin")]
+    [RoleAuthorize("Supervisor")]
     [Route("api/[controller]")]
     [ApiController]
     public class PerformanceHistoryController : ControllerBase

@@ -1,8 +1,8 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
-using AdjusterOptimizerAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {

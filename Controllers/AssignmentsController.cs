@@ -2,6 +2,7 @@ using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
@@ -9,6 +10,8 @@ namespace AdjusterOptimizerAPI.Controllers
     /// Handles all operations related to claim-to-adjuster assignments,
     /// including CRUD actions and future integration with the assignment engine.
     /// </summary>
+    [RoleAuthorize("Admin")]
+    [RoleAuthorize("Supervisor")]
     [Route("api/[controller]")]
     [ApiController]
     public class AssignmentsController : ControllerBase

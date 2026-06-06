@@ -2,6 +2,7 @@ using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
@@ -9,6 +10,8 @@ namespace AdjusterOptimizerAPI.Controllers
     /// Handles all operations related to adjusters, including
     /// CRUD actions and future workload/performance updates.
     /// </summary>
+    [RoleAuthorize("Admin")]
+    [RoleAuthorize("Manager")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdjustersController : ControllerBase
