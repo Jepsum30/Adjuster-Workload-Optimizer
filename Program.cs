@@ -20,6 +20,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
+
 // REGISTER ASSIGNMENT ENGINE
 builder.Services.AddScoped<AssignmentEngine>();
 
@@ -39,6 +40,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// ⭐ Serve index.html and static files
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())

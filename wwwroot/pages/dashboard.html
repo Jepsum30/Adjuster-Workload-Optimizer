@@ -138,15 +138,20 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     async function loadDashboard() {
         try {
             const [claimsRes, adjustersRes, assignmentsRes] = await Promise.all([
-                fetch(`${API_BASE}/api/Claims`),
-                fetch(`${API_BASE}/api/Adjusters`),
-                fetch(`${API_BASE}/api/Assignments`)
+                fetch(`${API_BASE}/api/claims`, { credentials: "include" }),
+                fetch(`${API_BASE}/api/adjusters`, { credentials: "include" }),
+                fetch(`${API_BASE}/api/assignments`, { credentials: "include" })
             ]);
+
+            if (!claimsRes.ok || !adjustersRes.ok || !assignmentsRes.ok) {
+                console.error("One or more API calls failed.");
+                return;
+            }
 
             const claims = await claimsRes.json();
             const adjusters = await adjustersRes.json();
@@ -165,17 +170,29 @@
     }
 
     async function recommendNext() {
-        const res = await fetch(`${API_BASE}/api/Claims`);
-        const claims = await res.json();
+        try {
+            const res = await fetch(`${API_BASE}/api/claims`, {
+                credentials: "include"
+            });
 
-        const next = claims.find(c => !c.assignedAdjusterId);
+            if (!res.ok) {
+                alert("Unable to load claims.");
+                return;
+            }
 
-        if (!next) {
-            alert("No unassigned claims available.");
-            return;
+            const claims = await res.json();
+            const next = claims.find(c => !c.assignedAdjusterId);
+
+            if (!next) {
+                alert("No unassigned claims available.");
+                return;
+            }
+
+            window.location.href = `assignment-recommendation.html?claimId=${next.claimId}`;
+
+        } catch (err) {
+            alert("Unable to connect to server.");
         }
-
-        window.location.href = `assignment-recommendation.html?claimId=${next.claimId}`;
     }
 
     loadDashboard();

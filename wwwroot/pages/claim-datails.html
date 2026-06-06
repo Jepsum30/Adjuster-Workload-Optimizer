@@ -64,7 +64,7 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     // Read claimId from URL
     function getClaimId() {
@@ -90,7 +90,9 @@
     // Load claim details
     async function loadClaim() {
         try {
-            const res = await fetch(`${API_BASE}/api/Claims/${claimId}`);
+            const res = await fetch(`${API_BASE}/api/claims/${claimId}`, {
+                credentials: "include"
+            });
 
             if (!res.ok) {
                 document.getElementById("claimInfo").innerHTML =
@@ -118,7 +120,9 @@
         const tbody = document.getElementById("assignmentHistory");
 
         try {
-            const res = await fetch(`${API_BASE}/api/Assignments`);
+            const res = await fetch(`${API_BASE}/api/assignments`, {
+                credentials: "include"
+            });
 
             if (!res.ok) {
                 tbody.innerHTML = "<tr><td colspan='3'>Failed to load history.</td></tr>";

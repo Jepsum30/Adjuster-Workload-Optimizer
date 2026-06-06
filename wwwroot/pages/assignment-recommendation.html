@@ -66,19 +66,34 @@
 </div>
 
 <script>
+const API_BASE = "https://localhost:7143";
+
 // Load claims into dropdown (only if no claimId is provided)
 async function loadClaims() {
     const select = document.getElementById("claimSelect");
 
-    const res = await fetch("/api/claims");
-    const claims = await res.json();
+    try {
+        const res = await fetch(`${API_BASE}/api/claims`, {
+            credentials: "include"
+        });
 
-    claims.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.claimId;
-        opt.textContent = `Claim #${c.claimId} — ${c.claimType} (${c.jurisdiction})`;
-        select.appendChild(opt);
-    });
+        if (!res.ok) {
+            select.innerHTML = "<option>Failed to load claims</option>";
+            return;
+        }
+
+        const claims = await res.json();
+
+        claims.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c.claimId;
+            opt.textContent = `Claim #${c.claimId} — ${c.claimType} (${c.jurisdiction})`;
+            select.appendChild(opt);
+        });
+
+    } catch (err) {
+        select.innerHTML = "<option>Unable to connect to server</option>";
+    }
 }
 
 // Read claimId from URL
@@ -109,50 +124,76 @@ async function getRecommendation(claimIdOverride = null) {
 
     if (!claimId) return alert("Please select a claim first.");
 
-    const res = await fetch(`/api/assignments/recommend/${claimId}`);
-    const data = await res.json();
+    try {
+        const res = await fetch(`${API_BASE}/api/assignments/recommend/${claimId}`, {
+            credentials: "include"
+        });
 
-    document.getElementById("resultSection").style.display = "block";
+        if (!res.ok) {
+            alert("Failed to load recommendation.");
+            return;
+        }
 
-    // Adjuster info
-    document.getElementById("adjusterInfo").innerHTML = `
-        <div class="alert alert-info">
-            <strong>${data.adjuster.name}</strong><br>
-            Skill: ${data.adjuster.primarySkill}<br>
-            Jurisdiction: ${data.adjuster.jurisdiction}<br>
-            Performance Score: ${data.adjuster.performanceScore}
-        </div>
-    `;
+        const data = await res.json();
 
-    // Explanation
-    const exp = data.explanation;
-    document.getElementById("explanation").innerHTML = `
-        <div><strong>Skill Match:</strong> ${exp.skillMatchReason}</div>
-        <div><strong>Jurisdiction:</strong> ${exp.jurisdictionReason}</div>
-        <div><strong>Workload:</strong> ${exp.workloadReason}</div>
-        <div><strong>Performance:</strong> ${exp.performanceReason}</div>
-        <div><strong>Final Score:</strong> ${exp.finalScore}</div>
-        <hr>
-        <div><strong>Summary:</strong> ${exp.summary}</div>
-    `;
+        document.getElementById("resultSection").style.display = "block";
+
+        // Adjuster info
+        document.getElementById("adjusterInfo").innerHTML = `
+            <div class="alert alert-info">
+                <strong>${data.adjuster.name}</strong><br>
+                Skill: ${data.adjuster.primarySkill}<br>
+                Jurisdiction: ${data.adjuster.jurisdiction}<br>
+                Performance Score: ${data.adjuster.performanceScore}
+            </div>
+        `;
+
+        // Explanation
+        const exp = data.explanation;
+        document.getElementById("explanation").innerHTML = `
+            <div><strong>Skill Match:</strong> ${exp.skillMatchReason}</div>
+            <div><strong>Jurisdiction:</strong> ${exp.jurisdictionReason}</div>
+            <div><strong>Workload:</strong> ${exp.workloadReason}</div>
+            <div><strong>Performance:</strong> ${exp.performanceReason}</div>
+            <div><strong>Final Score:</strong> ${exp.finalScore}</div>
+            <hr>
+            <div><strong>Summary:</strong> ${exp.summary}</div>
+        `;
+
+    } catch (err) {
+        alert("Unable to connect to server.");
+    }
 }
 
 // Auto-assign
 async function autoAssign() {
     const claimId = getClaimIdFromUrl() || document.getElementById("claimSelect").value;
 
-    const res = await fetch(`/api/assignments/auto-assign/${claimId}`, {
-        method: "POST"
-    });
+    try {
+        const res = await fetch(`${API_BASE}/api/assignments/auto-assign/${claimId}`, {
+            method: "POST",
+            credentials: "include"
+        });
 
-    const data = await res.json();
+        if (!res.ok) {
+            document.getElementById("assignMessage").innerHTML =
+                "<div class='alert alert-danger'>Failed to auto-assign.</div>";
+            return;
+        }
 
-    document.getElementById("assignMessage").innerHTML = `
-        <div class="alert alert-success">
-            ${data.message}<br>
-            Assignment ID: ${data.assignmentId}
-        </div>
-    `;
+        const data = await res.json();
+
+        document.getElementById("assignMessage").innerHTML = `
+            <div class="alert alert-success">
+                ${data.message}<br>
+                Assignment ID: ${data.assignmentId}
+            </div>
+        `;
+
+    } catch (err) {
+        document.getElementById("assignMessage").innerHTML =
+            "<div class='alert alert-danger'>Unable to connect to server.</div>";
+    }
 }
 
 // Run auto-load on page start

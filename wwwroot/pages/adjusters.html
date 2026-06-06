@@ -81,7 +81,7 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     document.addEventListener("DOMContentLoaded", loadAdjusters);
 
@@ -93,7 +93,9 @@
         messageDiv.innerHTML = "";
 
         try {
-            const response = await fetch(`${API_BASE}/api/Adjusters`);
+            const response = await fetch(`${API_BASE}/api/adjusters`, {
+                credentials: "include"
+            });
 
             if (!response.ok) {
                 messageDiv.innerHTML = "<p class='error'>Failed to load adjusters.</p>";

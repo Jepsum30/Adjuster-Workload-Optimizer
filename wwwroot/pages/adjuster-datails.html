@@ -82,7 +82,7 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     // Read adjusterId from URL
     function getAdjusterId() {
@@ -108,7 +108,9 @@
     // Load adjuster details
     async function loadAdjuster() {
         try {
-            const res = await fetch(`${API_BASE}/api/Adjusters/${adjusterId}`);
+            const res = await fetch(`${API_BASE}/api/adjusters/${adjusterId}`, {
+                credentials: "include"
+            });
 
             if (!res.ok) {
                 document.getElementById("adjusterInfo").innerHTML =
@@ -137,7 +139,9 @@
         const tbody = document.getElementById("assignedClaims");
 
         try {
-            const res = await fetch(`${API_BASE}/api/Claims`);
+            const res = await fetch(`${API_BASE}/api/claims`, {
+                credentials: "include"
+            });
 
             if (!res.ok) {
                 tbody.innerHTML = "<tr><td colspan='5'>Failed to load claims.</td></tr>";
@@ -185,7 +189,9 @@
         const tbody = document.getElementById("performanceHistory");
 
         try {
-            const res = await fetch(`${API_BASE}/api/PerformanceHistory`);
+            const res = await fetch(`${API_BASE}/api/performancehistory`, {
+                credentials: "include"
+            });
 
             if (!res.ok) {
                 tbody.innerHTML = "<tr><td colspan='4'>Failed to load performance.</td></tr>";
@@ -234,6 +240,7 @@
     loadAssignedClaims();
     loadPerformanceHistory();
 </script>
+
 
 </body>
 </html>

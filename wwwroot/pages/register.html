@@ -89,7 +89,7 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     async function registerUser() {
         const username = document.getElementById("username").value.trim();
@@ -112,8 +112,9 @@
         };
 
         try {
-            const response = await fetch(`${API_BASE}/api/Auth/register`, {
+            const response = await fetch(`${API_BASE}/api/users/register`, {
                 method: "POST",
+                credentials: "include",   // ⭐ REQUIRED for session cookie
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });

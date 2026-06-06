@@ -75,7 +75,7 @@
 </div>
 
 <script>
-    const API_BASE = "http://localhost:5196";
+    const API_BASE = "https://localhost:7143";
 
     async function loginUser() {
         const username = document.getElementById("username").value.trim();
@@ -88,8 +88,9 @@
         }
 
         try {
-            const response = await fetch(`${API_BASE}/api/Auth/login`, {
+            const response = await fetch(`${API_BASE}/api/auth/login`, {
                 method: "POST",
+                credentials: "include",   // ⭐ REQUIRED for session cookie
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password })
             });
@@ -101,9 +102,7 @@
                 return;
             }
 
-            // ⭐ Store JWT token for authenticated pages
-            localStorage.setItem("jwtToken", result);
-
+            // ⭐ No JWT stored — session cookie handles authentication
             messageDiv.innerHTML =
                 `<p class='text-success fw-bold'>Login successful!</p>`;
 
