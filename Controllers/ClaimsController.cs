@@ -10,8 +10,8 @@ namespace AdjusterOptimizerAPI.Controllers
     /// Handles all operations related to insurance claims,
     /// including CRUD actions and wildcard search functionality.
     /// </summary>
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ClaimsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -22,8 +22,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Claims
-        // Admin only: Returns all claims in the system.
+        // GET ALL CLAIMS (Admin only)
         // ------------------------------------------------------------
         [HttpGet]
         [RoleAuthorize("Admin")]
@@ -34,8 +33,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Claims/my
-        // Adjuster only: Returns claims assigned to the logged-in adjuster.
+        // GET CLAIMS ASSIGNED TO LOGGED-IN ADJUSTER
         // ------------------------------------------------------------
         [HttpGet("my")]
         [RoleAuthorize("Adjuster")]
@@ -54,9 +52,9 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Claims/{id}
+        // GET CLAIM BY ID
         // Admin: can view any claim
-        // Adjuster: can only view their own claim
+        // Adjuster: can only view their own assigned claim
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -79,8 +77,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // POST: api/Claims
-        // Admin only: Creates a new claim record.
+        // CREATE CLAIM (Admin only)
         // ------------------------------------------------------------
         [HttpPost]
         [RoleAuthorize("Admin")]
@@ -94,8 +91,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // PUT: api/Claims/{id}
-        // Admin only: Updates an existing claim.
+        // UPDATE CLAIM (Admin only)
         // ------------------------------------------------------------
         [HttpPut("{id}")]
         [RoleAuthorize("Admin")]
@@ -111,8 +107,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // DELETE: api/Claims/{id}
-        // Admin only: Deletes a claim from the system.
+        // DELETE CLAIM (Admin only)
         // ------------------------------------------------------------
         [HttpDelete("{id}")]
         [RoleAuthorize("Admin")]
@@ -130,12 +125,12 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Claims/search?query=auto
+        // SEARCH CLAIMS
         // Admin: searches all claims
         // Adjuster: searches only their assigned claims
         // ------------------------------------------------------------
         [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<Claim>>> SearchClaims(string query)
+        public async Task<IActionResult> SearchClaims(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
                 return BadRequest("Search query cannot be empty.");

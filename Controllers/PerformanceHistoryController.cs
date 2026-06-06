@@ -6,9 +6,13 @@ using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
-    [RoleAuthorize("Admin", "Supervisor")]
-    [Route("api/[controller]")]
+    /// <summary>
+    /// Manages performance history records for adjusters,
+    /// including cycle time, indemnity, litigation, and satisfaction data.
+    /// </summary>
     [ApiController]
+    [Route("api/[controller]")]
+    [RoleAuthorize("Admin", "Supervisor")]
     public class PerformanceHistoryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -18,6 +22,9 @@ namespace AdjusterOptimizerAPI.Controllers
             _context = context;
         }
 
+        // ------------------------------------------------------------
+        // GET ALL PERFORMANCE RECORDS
+        // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -29,6 +36,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(records);
         }
 
+        // ------------------------------------------------------------
+        // GET PERFORMANCE RECORD BY ID
+        // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -43,6 +53,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(record);
         }
 
+        // ------------------------------------------------------------
+        // CREATE PERFORMANCE RECORD
+        // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(PerformanceHistory model)
         {
@@ -53,6 +66,9 @@ namespace AdjusterOptimizerAPI.Controllers
                 new { id = model.RecordId }, model);
         }
 
+        // ------------------------------------------------------------
+        // UPDATE PERFORMANCE RECORD
+        // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, PerformanceHistory model)
         {
@@ -65,6 +81,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return NoContent();
         }
 
+        // ------------------------------------------------------------
+        // DELETE PERFORMANCE RECORD
+        // ------------------------------------------------------------
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

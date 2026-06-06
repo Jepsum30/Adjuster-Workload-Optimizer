@@ -8,11 +8,11 @@ namespace AdjusterOptimizerAPI.Controllers
 {
     /// <summary>
     /// Handles all operations related to claim-to-adjuster assignments,
-    /// including CRUD actions and future integration with the assignment engine.
+    /// including CRUD actions and integration with the assignment engine.
     /// </summary>
-    [RoleAuthorize("Admin", "Supervisor")]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [RoleAuthorize("Admin", "Supervisor")]
     public class AssignmentsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -23,8 +23,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Assignments
-        // Returns all assignments with navigation properties.
+        // GET ALL ASSIGNMENTS
         // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -38,8 +37,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Assignments/{id}
-        // Returns a single assignment by ID with navigation properties.
+        // GET ASSIGNMENT BY ID
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -56,8 +54,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // POST: api/Assignments
-        // Creates a new assignment record.
+        // CREATE NEW ASSIGNMENT
         // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(Assignment model)
@@ -70,8 +67,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // PUT: api/Assignments/{id}
-        // Updates an existing assignment.
+        // UPDATE EXISTING ASSIGNMENT
         // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Assignment model)
@@ -86,8 +82,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // DELETE: api/Assignments/{id}
-        // Deletes an assignment from the system.
+        // DELETE ASSIGNMENT
         // ------------------------------------------------------------
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

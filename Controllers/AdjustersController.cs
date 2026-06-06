@@ -10,9 +10,9 @@ namespace AdjusterOptimizerAPI.Controllers
     /// Handles all operations related to adjusters, including
     /// CRUD actions and future workload/performance updates.
     /// </summary>
-    [RoleAuthorize("Admin", "Manager")]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [RoleAuthorize("Admin", "Manager")]
     public class AdjustersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -23,8 +23,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Adjusters
-        // Returns all adjusters in the system.
+        // GET ALL ADJUSTERS
         // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -34,8 +33,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET: api/Adjusters/{id}
-        // Returns a single adjuster by ID.
+        // GET ADJUSTER BY ID
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -49,8 +47,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // POST: api/Adjusters
-        // Creates a new adjuster record.
+        // CREATE NEW ADJUSTER
         // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(Adjuster model)
@@ -63,8 +60,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // PUT: api/Adjusters/{id}
-        // Updates an existing adjuster.
+        // UPDATE EXISTING ADJUSTER
         // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Adjuster model)
@@ -79,8 +75,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // DELETE: api/Adjusters/{id}
-        // Deletes an adjuster from the system.
+        // DELETE ADJUSTER
         // ------------------------------------------------------------
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

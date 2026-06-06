@@ -37,6 +37,12 @@ namespace AdjusterOptimizerAPI.Models
         public required string Specialty { get; set; }
 
         /// <summary>
+        /// Primary skill used by the assignment engine.
+        /// This is REQUIRED because AssignmentEngine references it.
+        /// </summary>
+        public string? PrimarySkill { get; set; }
+
+        /// <summary>
         /// Jurisdiction(s) the adjuster is licensed to handle.
         /// </summary>
         public required string Jurisdiction { get; set; }
@@ -61,11 +67,11 @@ namespace AdjusterOptimizerAPI.Models
         /// <summary>
         /// Navigation property for all assignments linked to this adjuster.
         /// </summary>
-        public required List<Assignment> Assignments { get; set; } = [];
+        public List<Assignment> Assignments { get; set; } = new();
 
         /// <summary>
         /// Navigation property for performance history records.
         /// </summary>
-        public required List<PerformanceHistory> PerformanceHistory { get; set; } = [];
+        public List<PerformanceHistory> PerformanceHistory { get; set; } = new();
     }
 }

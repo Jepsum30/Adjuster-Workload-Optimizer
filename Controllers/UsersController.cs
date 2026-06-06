@@ -6,9 +6,9 @@ using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
-    [RoleAuthorize("Admin")]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [RoleAuthorize("Admin")]
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -18,21 +18,32 @@ namespace AdjusterOptimizerAPI.Controllers
             _context = context;
         }
 
+        // ------------------------------------------------------------
+        // GET ALL USERS
+        // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _context.Users.ToListAsync());
+            var users = await _context.Users.ToListAsync();
+            return Ok(users);
         }
 
+        // ------------------------------------------------------------
+        // GET USER BY ID
+        // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound("User not found.");
 
             return Ok(user);
         }
 
+        // ------------------------------------------------------------
+        // REGISTER NEW USER
+        // ------------------------------------------------------------
         [HttpPost("register")]
         public async Task<IActionResult> Register(User model)
         {
@@ -41,19 +52,28 @@ namespace AdjusterOptimizerAPI.Controllers
                 return BadRequest("Password must be at least 8 characters, include upper/lowercase letters, a number, and a symbol.");
             }
 
+            // Hash password
             model.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.PasswordHash);
 
             _context.Users.Add(model);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "User registered successfully.", model.UserId });
+            return Ok(new
+            {
+                message = "User registered successfully.",
+                model.UserId
+            });
         }
 
+        // ------------------------------------------------------------
+        // CHANGE PASSWORD
+        // ------------------------------------------------------------
         [HttpPut("change-password/{id}")]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] string newPassword)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound("User not found.");
+            if (user == null)
+                return NotFound("User not found.");
 
             if (!ValidatePassword(newPassword))
             {
@@ -66,6 +86,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok("Password updated successfully.");
         }
 
+        // ------------------------------------------------------------
+        // CREATE USER (ADMIN ONLY)
+        // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(User model)
         {
@@ -75,6 +98,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = model.UserId }, model);
         }
 
+        // ------------------------------------------------------------
+        // UPDATE USER
+        // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, User model)
         {
@@ -87,11 +113,15 @@ namespace AdjusterOptimizerAPI.Controllers
             return NoContent();
         }
 
+        // ------------------------------------------------------------
+        // DELETE USER
+        // ------------------------------------------------------------
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound("User not found.");
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
@@ -99,6 +129,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return NoContent();
         }
 
+        // ------------------------------------------------------------
+        // PASSWORD VALIDATION
+        // ------------------------------------------------------------
         private bool ValidatePassword(string password)
         {
             if (string.IsNullOrEmpty(password) || password.Length < 8)

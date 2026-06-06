@@ -17,9 +17,9 @@ namespace AdjusterOptimizerAPI.Controllers
             _context = context;
         }
 
-        // ---------------------------
+        // ------------------------------------------------------------
         // LOGIN
-        // ---------------------------
+        // ------------------------------------------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -29,7 +29,7 @@ namespace AdjusterOptimizerAPI.Controllers
                 return BadRequest(new { message = "Username and password are required." });
             }
 
-            // Look up user by username
+            // Retrieve user by username
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == request.Username);
 
@@ -38,10 +38,10 @@ namespace AdjusterOptimizerAPI.Controllers
                 return Unauthorized(new { message = "Invalid username or password." });
             }
 
-            // Verify password hash
-            bool validPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            // Validate password hash
+            bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
 
-            if (!validPassword)
+            if (!passwordValid)
             {
                 return Unauthorized(new { message = "Invalid username or password." });
             }
@@ -63,9 +63,9 @@ namespace AdjusterOptimizerAPI.Controllers
             });
         }
 
-        // ---------------------------
+        // ------------------------------------------------------------
         // LOGOUT
-        // ---------------------------
+        // ------------------------------------------------------------
         [HttpPost("logout")]
         public IActionResult Logout()
         {
@@ -74,12 +74,12 @@ namespace AdjusterOptimizerAPI.Controllers
         }
     }
 
-    // ---------------------------
+    // ------------------------------------------------------------
     // LOGIN REQUEST MODEL
-    // ---------------------------
+    // ------------------------------------------------------------
     public class LoginRequest
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }

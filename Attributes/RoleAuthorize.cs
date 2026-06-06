@@ -3,20 +3,25 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AdjusterOptimizerAPI.Attributes
 {
+    /// <summary>
+    /// Custom authorization attribute that restricts access
+    /// to users whose session role matches one of the allowed roles.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
     public class RoleAuthorizeAttribute : Attribute, IAuthorizationFilter
     {
-        private readonly string _requiredRole;
+        private readonly string[] _requiredRoles;
 
-        public RoleAuthorizeAttribute(string requiredRole)
+        public RoleAuthorizeAttribute(params string[] requiredRoles)
         {
-            _requiredRole = requiredRole;
+            _requiredRoles = requiredRoles;
         }
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             var httpContext = context.HttpContext;
 
-            // Check if user is logged in
+            // Check login status
             var role = httpContext.Session.GetString("ROLE");
 
             if (role == null)
@@ -28,8 +33,11 @@ namespace AdjusterOptimizerAPI.Attributes
                 return;
             }
 
-            // Check if user has the required role
-            if (!string.Equals(role, _requiredRole, StringComparison.OrdinalIgnoreCase))
+            // Check if user has ANY allowed role
+            bool authorized = _requiredRoles
+                .Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase));
+
+            if (!authorized)
             {
                 context.Result = new ForbidResult();
                 return;
