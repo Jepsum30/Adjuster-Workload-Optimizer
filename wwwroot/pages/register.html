@@ -81,6 +81,11 @@
     </div>
 
     <button class="btn btn-primary w-100" onclick="registerUser()">Register</button>
+
+    <button class="btn btn-secondary w-100 mt-2"
+            onclick="location.href='login.html'">
+        Back to Login
+    </button>
 </div>
 
 <script>
@@ -102,18 +107,18 @@
         const body = {
             username,
             email,
-            role,
-            passwordHash: password
+            password,
+            role
         };
 
         try {
-            const response = await fetch(`${API_BASE}/api/Users/register`, {
+            const response = await fetch(`${API_BASE}/api/Auth/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
 
-            const result = await response.json();
+            const result = await response.text();
 
             if (!response.ok) {
                 messageDiv.innerHTML = `<p class='error'>${result}</p>`;
@@ -122,6 +127,10 @@
 
             messageDiv.innerHTML =
                 `<p class='text-success fw-bold'>Account created successfully!</p>`;
+
+            setTimeout(() => {
+                location.href = "login.html";
+            }, 1000);
 
         } catch (error) {
             messageDiv.innerHTML = "<p class='error'>Unable to connect to server.</p>";

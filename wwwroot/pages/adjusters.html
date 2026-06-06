@@ -12,6 +12,7 @@
         .container { margin-top: 40px; }
         table { background: white; }
         .error { color: red; font-weight: bold; }
+        .btn-sm { margin-right: 4px; }
     </style>
 </head>
 
@@ -64,9 +65,10 @@
             <thead class="table-dark">
                 <tr>
                     <th>Name</th>
-                    <th>Specialties</th>
-                    <th>Jurisdictions</th>
-                    <th>Current Workload</th>
+                    <th>Specialty</th>
+                    <th>Jurisdiction</th>
+                    <th>Workload</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="adjustersBody"></tbody>
@@ -108,11 +110,29 @@
             data.forEach(a => {
                 const row = document.createElement("tr");
 
+                const fullName = `${a.first_Name} ${a.last_Name}`;
+                const specialty = a.specialty ?? "N/A";
+                const jurisdiction = a.jurisdiction ?? "N/A";
+                const workload = a.workload ?? 0;
+
                 row.innerHTML = `
-                    <td>${a.first_Name} ${a.last_Name}</td>
-                    <td>${a.specialty ?? "N/A"}</td>
-                    <td>${a.jurisdiction ?? "N/A"}</td>
-                    <td>${a.workload ?? 0} Active Claims</td>
+                    <td>${fullName}</td>
+                    <td>${specialty}</td>
+                    <td>${jurisdiction}</td>
+                    <td>${workload} Active Claims</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="viewAdjuster(${a.adjusterId})">
+                            View Details
+                        </button>
+
+                        <button class="btn btn-secondary btn-sm" onclick="viewClaims(${a.adjusterId})">
+                            Assigned Claims
+                        </button>
+
+                        <button class="btn btn-warning btn-sm" onclick="viewPerformance(${a.adjusterId})">
+                            Performance
+                        </button>
+                    </td>
                 `;
 
                 tbody.appendChild(row);
@@ -122,6 +142,18 @@
             messageDiv.innerHTML =
                 "<p class='error'>Unable to connect to server.</p>";
         }
+    }
+
+    function viewAdjuster(id) {
+        window.location.href = `adjuster-details.html?adjusterId=${id}`;
+    }
+
+    function viewClaims(id) {
+        window.location.href = `claims.html?adjusterId=${id}`;
+    }
+
+    function viewPerformance(id) {
+        window.location.href = `performance.html?adjusterId=${id}`;
     }
 </script>
 

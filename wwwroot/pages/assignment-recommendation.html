@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Assignment Recommendation</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 10px; }
+        .explanation-item { margin-bottom: 8px; }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-dark p-2">
+    <a href="dashboard.html" class="btn btn-outline-light">Back to Dashboard</a>
+</nav>
+
+<div class="container mt-4">
+
+    <h2>Assignment Recommendation</h2>
+    <p class="text-muted">
+        Select a claim to view the recommended adjuster and explanation.
+    </p>
+
+    <!-- CLAIM SELECTOR -->
+    <div class="card p-3 shadow-sm mb-4">
+        <h4>Select Claim</h4>
+
+        <div class="row">
+            <div class="col-md-6">
+                <select id="claimSelect" class="form-select">
+                    <option value="">-- Select a Claim --</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100" onclick="getRecommendation()">
+                    Get Recommendation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECOMMENDATION RESULT -->
+    <div id="resultSection" class="card p-3 shadow-sm mb-4" style="display:none;">
+        <h4>Recommended Adjuster</h4>
+
+        <div id="adjusterInfo" class="mt-3"></div>
+
+        <h5 class="mt-4">Explanation</h5>
+        <div id="explanation"></div>
+
+        <button class="btn btn-success mt-3" onclick="autoAssign()">
+            Auto‑Assign This Adjuster
+        </button>
+
+        <div id="assignMessage" class="mt-3"></div>
+    </div>
+
+</div>
+
+<script>
+// Load claims into dropdown (only if no claimId is provided)
+async function loadClaims() {
+    const select = document.getElementById("claimSelect");
+
+    const res = await fetch("/api/claims");
+    const claims = await res.json();
+
+    claims.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.claimId;
+        opt.textContent = `Claim #${c.claimId} — ${c.claimType} (${c.jurisdiction})`;
+        select.appendChild(opt);
+    });
+}
+
+// Read claimId from URL
+function getClaimIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("claimId");
+}
+
+// Auto-run recommendation
+async function autoLoadClaim() {
+    const claimId = getClaimIdFromUrl();
+
+    if (claimId) {
+        // Hide dropdown since user came from Claims page
+        document.querySelector(".card").style.display = "none";
+
+        // Auto-run recommendation
+        await getRecommendation(claimId);
+    } else {
+        // No claimId passed → load dropdown normally
+        loadClaims();
+    }
+}
+
+// Fetch recommendation
+async function getRecommendation(claimIdOverride = null) {
+    const claimId = claimIdOverride || document.getElementById("claimSelect").value;
+
+    if (!claimId) return alert("Please select a claim first.");
+
+    const res = await fetch(`/api/assignments/recommend/${claimId}`);
+    const data = await res.json();
+
+    document.getElementById("resultSection").style.display = "block";
+
+    // Adjuster info
+    document.getElementById("adjusterInfo").innerHTML = `
+        <div class="alert alert-info">
+            <strong>${data.adjuster.name}</strong><br>
+            Skill: ${data.adjuster.primarySkill}<br>
+            Jurisdiction: ${data.adjuster.jurisdiction}<br>
+            Performance Score: ${data.adjuster.performanceScore}
+        </div>
+    `;
+
+    // Explanation
+    const exp = data.explanation;
+    document.getElementById("explanation").innerHTML = `
+        <div><strong>Skill Match:</strong> ${exp.skillMatchReason}</div>
+        <div><strong>Jurisdiction:</strong> ${exp.jurisdictionReason}</div>
+        <div><strong>Workload:</strong> ${exp.workloadReason}</div>
+        <div><strong>Performance:</strong> ${exp.performanceReason}</div>
+        <div><strong>Final Score:</strong> ${exp.finalScore}</div>
+        <hr>
+        <div><strong>Summary:</strong> ${exp.summary}</div>
+    `;
+}
+
+// Auto-assign
+async function autoAssign() {
+    const claimId = getClaimIdFromUrl() || document.getElementById("claimSelect").value;
+
+    const res = await fetch(`/api/assignments/auto-assign/${claimId}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    document.getElementById("assignMessage").innerHTML = `
+        <div class="alert alert-success">
+            ${data.message}<br>
+            Assignment ID: ${data.assignmentId}
+        </div>
+    `;
+}
+
+// Run auto-load on page start
+autoLoadClaim();
+</script>
+
+</body>
+</html>

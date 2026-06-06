@@ -9,17 +9,16 @@
 
     <style>
         body { background-color: #f8f9fa; }
-        .card { border-radius: 12px; }
-        .dashboard-card:hover {
-            transform: translateY(-3px);
-            transition: 0.2s ease-in-out;
-        }
+        .card { border-radius: 12px; transition: 0.2s ease-in-out; }
+        .dashboard-card:hover { transform: translateY(-4px); }
+        .metric-number { font-size: 2rem; font-weight: bold; }
+        .metric-label { font-size: 0.9rem; color: #666; }
     </style>
 </head>
 
 <body>
 
-<!-- GLOBAL NAVBAR -->
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
@@ -53,17 +52,49 @@
 
     <h2 class="mb-3">Dashboard Overview</h2>
     <p class="text-muted">
-        This dashboard provides a quick snapshot of system activity.
-        These cards will display real‑time data once API integration is added.
+        Live system metrics powered by your API.
     </p>
 
+    <!-- METRICS ROW -->
+    <div class="row" id="metricsRow">
+
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 shadow-sm dashboard-card text-center">
+                <div class="metric-number" id="totalClaims">0</div>
+                <div class="metric-label">Total Claims</div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 shadow-sm dashboard-card text-center">
+                <div class="metric-number" id="totalAdjusters">0</div>
+                <div class="metric-label">Total Adjusters</div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 shadow-sm dashboard-card text-center">
+                <div class="metric-number" id="totalAssignments">0</div>
+                <div class="metric-label">Total Assignments</div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 shadow-sm dashboard-card text-center">
+                <div class="metric-number" id="unassignedClaims">0</div>
+                <div class="metric-label">Unassigned Claims</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ACTION CARDS -->
     <div class="row mt-4">
 
-        <!-- Incoming Claims -->
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm dashboard-card">
                 <h4>Incoming Claims</h4>
-                <p>Shows all new claims awaiting assignment.</p>
+                <p>View all new claims awaiting assignment.</p>
                 <button class="btn btn-primary btn-sm"
                         onclick="location.href='claims.html'">
                     View Claims
@@ -71,11 +102,10 @@
             </div>
         </div>
 
-        <!-- Adjuster Workload -->
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm dashboard-card">
                 <h4>Adjuster Workload</h4>
-                <p>Displays current workload levels for each adjuster.</p>
+                <p>Monitor adjuster capacity and load balance.</p>
                 <button class="btn btn-primary btn-sm"
                         onclick="location.href='adjusters.html'">
                     View Adjusters
@@ -83,11 +113,10 @@
             </div>
         </div>
 
-        <!-- Recent Assignments -->
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm dashboard-card">
                 <h4>Recent Assignments</h4>
-                <p>Tracks the latest claim‑to‑adjuster assignments.</p>
+                <p>Track the latest claim-to-adjuster assignments.</p>
                 <button class="btn btn-primary btn-sm"
                         onclick="location.href='assignments.html'">
                     View Assignments
@@ -96,7 +125,61 @@
         </div>
 
     </div>
+
+    <!-- QUICK ACTION -->
+    <div class="card p-3 shadow-sm mt-4 text-center">
+        <h4>Need a Recommendation?</h4>
+        <p>Run the Assignment Engine on the next unassigned claim.</p>
+        <button class="btn btn-success btn-lg" onclick="recommendNext()">
+            Recommend Next Claim
+        </button>
+    </div>
+
 </div>
+
+<script>
+    const API_BASE = "http://localhost:5196";
+
+    async function loadDashboard() {
+        try {
+            const [claimsRes, adjustersRes, assignmentsRes] = await Promise.all([
+                fetch(`${API_BASE}/api/Claims`),
+                fetch(`${API_BASE}/api/Adjusters`),
+                fetch(`${API_BASE}/api/Assignments`)
+            ]);
+
+            const claims = await claimsRes.json();
+            const adjusters = await adjustersRes.json();
+            const assignments = await assignmentsRes.json();
+
+            document.getElementById("totalClaims").textContent = claims.length;
+            document.getElementById("totalAdjusters").textContent = adjusters.length;
+            document.getElementById("totalAssignments").textContent = assignments.length;
+
+            const unassigned = claims.filter(c => !c.assignedAdjusterId).length;
+            document.getElementById("unassignedClaims").textContent = unassigned;
+
+        } catch (err) {
+            console.error("Dashboard load error:", err);
+        }
+    }
+
+    async function recommendNext() {
+        const res = await fetch(`${API_BASE}/api/Claims`);
+        const claims = await res.json();
+
+        const next = claims.find(c => !c.assignedAdjusterId);
+
+        if (!next) {
+            alert("No unassigned claims available.");
+            return;
+        }
+
+        window.location.href = `assignment-recommendation.html?claimId=${next.claimId}`;
+    }
+
+    loadDashboard();
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

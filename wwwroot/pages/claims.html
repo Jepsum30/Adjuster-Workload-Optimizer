@@ -12,6 +12,7 @@
         .container { margin-top: 40px; }
         table { background: white; }
         .error { color: red; font-weight: bold; }
+        .btn-sm { margin-right: 4px; }
     </style>
 </head>
 
@@ -52,7 +53,7 @@
     <h2>Claims Management</h2>
     <p class="text-muted">
         This page displays all incoming claims.  
-        In Week 3, you will be able to assign claims to adjusters.
+        Use the Recommend button to run the Assignment Engine.
     </p>
 
     <div id="message"></div>
@@ -67,7 +68,7 @@
                     <th>Type</th>
                     <th>Jurisdiction</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="claimsBody"></tbody>
@@ -84,9 +85,15 @@
 
     document.addEventListener("DOMContentLoaded", loadClaims);
 
+    function getAdjusterFilter() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("adjusterId");
+    }
+
     async function loadClaims() {
         const messageDiv = document.getElementById("message");
         const tbody = document.getElementById("claimsBody");
+        const adjusterFilter = getAdjusterFilter();
 
         tbody.innerHTML = "";
         messageDiv.innerHTML = "";
@@ -99,7 +106,12 @@
                 return;
             }
 
-            const data = await response.json();
+            let data = await response.json();
+
+            // ⭐ Filter by adjuster if coming from Adjusters page
+            if (adjusterFilter) {
+                data = data.filter(c => c.assignedAdjusterId == adjusterFilter);
+            }
 
             if (!data || data.length === 0) {
                 messageDiv.innerHTML = "<p>No claims found.</p>";
@@ -111,12 +123,16 @@
 
                 row.innerHTML = `
                     <td>${c.claimId}</td>
-                    <td>${c.type ?? ""}</td>
+                    <td>${c.claimType ?? ""}</td>
                     <td>${c.jurisdiction ?? ""}</td>
                     <td>${c.status ?? ""}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="assignClaim(${c.claimId})">
-                            Assign
+                        <button class="btn btn-success btn-sm" onclick="recommend(${c.claimId})">
+                            Recommend
+                        </button>
+
+                        <button class="btn btn-secondary btn-sm" onclick="viewClaim(${c.claimId})">
+                            View
                         </button>
                     </td>
                 `;
@@ -129,8 +145,14 @@
         }
     }
 
-    function assignClaim(id) {
-        alert("Assignment modal coming in Week 3. Claim ID: " + id);
+    // ⭐ Redirect to the Assignment Recommendation UI
+    function recommend(id) {
+        window.location.href = `assignment-recommendation.html?claimId=${id}`;
+    }
+
+    // ⭐ Redirect to Claim Details page
+    function viewClaim(id) {
+        window.location.href = `claim-details.html?claimId=${id}`;
     }
 </script>
 

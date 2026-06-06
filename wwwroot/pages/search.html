@@ -11,7 +11,8 @@
         body { background-color: #f8f9fa; }
         .container { margin-top: 40px; }
         .error { color: red; font-weight: bold; }
-        pre { background: #f4f4f4; padding: 15px; border-radius: 6px; }
+        table { background: white; }
+        .btn-sm { margin-right: 4px; }
     </style>
 </head>
 
@@ -85,13 +86,62 @@
 
             const data = await response.json();
 
-            resultsDiv.innerHTML =
-                `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            if (!data || data.length === 0) {
+                resultsDiv.innerHTML = "<p>No matching claims found.</p>";
+                return;
+            }
+
+            // Build results table
+            let html = `
+                <table class="table table-bordered table-striped table-hover mt-3">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Type</th>
+                            <th>Jurisdiction</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(c => {
+                html += `
+                    <tr>
+                        <td>${c.claimId}</td>
+                        <td>${c.claimType ?? ""}</td>
+                        <td>${c.jurisdiction ?? ""}</td>
+                        <td>${c.status ?? ""}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="recommend(${c.claimId})">
+                                Recommend
+                            </button>
+
+                            <button class="btn btn-secondary btn-sm" onclick="viewClaim(${c.claimId})">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+
+            resultsDiv.innerHTML = html;
 
         } catch (error) {
             resultsDiv.innerHTML =
                 "<p class='error'>Unable to connect to server.</p>";
         }
+    }
+
+    function recommend(id) {
+        window.location.href = `assignment-recommendation.html?claimId=${id}`;
+    }
+
+    function viewClaim(id) {
+        window.location.href = `claim-details.html?claimId=${id}`;
     }
 </script>
 

@@ -12,6 +12,7 @@
         .container { margin-top: 40px; }
         .error { color: red; font-weight: bold; }
         table { background: white; }
+        .btn-sm { margin-right: 4px; }
     </style>
 </head>
 
@@ -49,25 +50,25 @@
 <!-- PAGE CONTENT -->
 <div class="container">
 
-    <h2>Adjuster Performance Metrics</h2>
+    <h2>Adjuster Performance History</h2>
     <p class="text-muted">
-        This page displays performance history for each adjuster, including
-        resolution speed, accuracy, and workload efficiency.
+        This page displays performance records for adjusters, including scores and notes.
     </p>
 
     <div id="message"></div>
 
     <div class="card p-3 shadow-sm mt-3">
-        <h4 class="mb-3">Performance Overview</h4>
+        <h4 class="mb-3">Performance Records</h4>
 
         <table class="table table-bordered table-striped table-hover">
             <thead class="table-dark">
                 <tr>
+                    <th>Record ID</th>
                     <th>Adjuster</th>
-                    <th>Period</th>
-                    <th>Avg. Resolution Time</th>
-                    <th>Accuracy Score</th>
-                    <th>Claims Closed</th>
+                    <th>Score</th>
+                    <th>Notes</th>
+                    <th>Date Recorded</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="performanceBody"></tbody>
@@ -84,9 +85,15 @@
 
     document.addEventListener("DOMContentLoaded", loadPerformance);
 
+    function getAdjusterFilter() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("adjusterId");
+    }
+
     async function loadPerformance() {
         const messageDiv = document.getElementById("message");
         const tbody = document.getElementById("performanceBody");
+        const adjusterFilter = getAdjusterFilter();
 
         tbody.innerHTML = "";
         messageDiv.innerHTML = "";
@@ -99,7 +106,12 @@
                 return;
             }
 
-            const data = await response.json();
+            let data = await response.json();
+
+            // ⭐ Filter by adjuster if coming from Adjuster Details page
+            if (adjusterFilter) {
+                data = data.filter(p => p.adjusterId == adjusterFilter);
+            }
 
             if (!data || data.length === 0) {
                 messageDiv.innerHTML = "<p>No performance records found.</p>";
@@ -107,13 +119,26 @@
             }
 
             data.forEach(p => {
+                const adjusterName = p.adjuster
+                    ? `${p.adjuster.firstName} ${p.adjuster.lastName}`
+                    : "Unknown";
+
+                const dateRecorded = p.dateRecorded
+                    ? new Date(p.dateRecorded).toLocaleDateString()
+                    : "N/A";
+
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                    <td>${p.adjusterName ?? ""}</td>
-                    <td>${p.period ?? ""}</td>
-                    <td>${p.averageResolutionTime ?? ""}</td>
-                    <td>${p.accuracyScore ?? ""}%</td>
-                    <td>${p.claimsClosed ?? ""}</td>
+                    <td>${p.recordId}</td>
+                    <td>${adjusterName}</td>
+                    <td>${p.score}</td>
+                    <td>${p.notes ?? "N/A"}</td>
+                    <td>${dateRecorded}</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="viewAdjuster(${p.adjusterId})">
+                            View Adjuster
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -121,6 +146,10 @@
         } catch (error) {
             messageDiv.innerHTML = "<p class='error'>Unable to connect to server.</p>";
         }
+    }
+
+    function viewAdjuster(id) {
+        window.location.href = `adjuster-details.html?adjusterId=${id}`;
     }
 </script>
 
