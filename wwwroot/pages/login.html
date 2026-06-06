@@ -16,7 +16,7 @@
 
 <body>
 
-<!-- GLOBAL NAVBAR -->
+<!-- NAVBAR (correct for /pages folder) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
@@ -75,7 +75,7 @@
 </div>
 
 <script>
-    const API_BASE = "https://localhost:7143";
+    const API_BASE = "";
 
     async function loginUser() {
         const username = document.getElementById("username").value.trim();
@@ -90,7 +90,7 @@
         try {
             const response = await fetch(`${API_BASE}/api/auth/login`, {
                 method: "POST",
-                credentials: "include",   // ⭐ REQUIRED for session cookie
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password })
             });
@@ -102,7 +102,6 @@
                 return;
             }
 
-            // ⭐ No JWT stored — session cookie handles authentication
             messageDiv.innerHTML =
                 `<p class='text-success fw-bold'>Login successful!</p>`;
 

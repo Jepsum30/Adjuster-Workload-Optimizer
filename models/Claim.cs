@@ -32,6 +32,7 @@ namespace AdjusterOptimizerAPI.Models
         public required string Status { get; set; }
 
         // ⭐ REQUIRED FOR ASSIGNMENT ENGINE + CONTROLLERS
+        [Column("ASSIGNED_ADJUSTER_ID")]
         public int? AssignedAdjusterId { get; set; }
         public Adjuster? AssignedAdjuster { get; set; }
 

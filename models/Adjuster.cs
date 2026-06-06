@@ -9,69 +9,38 @@ namespace AdjusterOptimizerAPI.Models
     /// </summary>
     public class Adjuster
     {
-        /// <summary>
-        /// Primary key for the Adjusters table.
-        /// </summary>
         [Column("ADJUSTER_ID")]
         public int AdjusterId { get; set; }
 
-        /// <summary>
-        /// Adjuster's first name.
-        /// </summary>
-        public required string First_Name { get; set; }
+        [Column("FIRST_NAME")]
+        public string First_Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Adjuster's last name.
-        /// </summary>
-        public required string Last_Name { get; set; }
+        [Column("LAST_NAME")]
+        public string Last_Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Skill level rating (1–10).
-        /// </summary>
         [Column("SKILL_LEVEL")]
         public int SkillLevel { get; set; }
 
-        /// <summary>
-        /// Primary specialty (Auto, Property, Liability, Commercial, etc.).
-        /// </summary>
-        public required string Specialty { get; set; }
+        [Column("SPECIALTY")]
+        public string Specialty { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Primary skill used by the assignment engine.
-        /// This is REQUIRED because AssignmentEngine references it.
-        /// </summary>
+        // Only add this if PRIMARY_SKILL exists in your MySQL table
+        [Column("PRIMARY_SKILL")]
         public string? PrimarySkill { get; set; }
 
-        /// <summary>
-        /// Jurisdiction(s) the adjuster is licensed to handle.
-        /// </summary>
-        public required string Jurisdiction { get; set; }
+        [Column("JURISDICTION")]
+        public string Jurisdiction { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Number of active claims currently assigned.
-        /// </summary>
+        [Column("WORKLOAD")]
         public int Workload { get; set; }
 
-        /// <summary>
-        /// Performance score (0.0–100.0).
-        /// </summary>
         [Column("PERFORMANCE_SCORE")]
         public decimal PerformanceScore { get; set; }
 
-        /// <summary>
-        /// Number of years the adjuster has been with the company.
-        /// </summary>
         [Column("TENURE_YEARS")]
         public int TenureYears { get; set; }
 
-        /// <summary>
-        /// Navigation property for all assignments linked to this adjuster.
-        /// </summary>
         public List<Assignment> Assignments { get; set; } = new();
-
-        /// <summary>
-        /// Navigation property for performance history records.
-        /// </summary>
         public List<PerformanceHistory> PerformanceHistory { get; set; } = new();
     }
 }

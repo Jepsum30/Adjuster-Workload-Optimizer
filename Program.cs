@@ -1,10 +1,12 @@
 using AdjusterOptimizerAPI.Data;
-using Microsoft.EntityFrameworkCore;
 using AdjusterOptimizerAPI.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// ------------------------------------------------------------
+// JSON + Controllers
+// ------------------------------------------------------------
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -13,7 +15,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
-// Register EF Core with MySQL
+// ------------------------------------------------------------
+// Database (MySQL)
+// ------------------------------------------------------------
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -21,42 +25,72 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
-// REGISTER ASSIGNMENT ENGINE
+// ------------------------------------------------------------
+// Dependency Injection
+// ------------------------------------------------------------
 builder.Services.AddScoped<AssignmentEngine>();
 
-// ADD SESSION SUPPORT
+// ------------------------------------------------------------
+// SESSION — REQUIRED for cookie‑based auth
+// ------------------------------------------------------------
 builder.Services.AddDistributedMemoryCache();
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+
+    // HTTPS ONLY (required for class security)
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+
+    // SameSite=None because cookies are secure
+    options.Cookie.SameSite = SameSiteMode.None;
+
     options.IdleTimeout = TimeSpan.FromHours(1);
 });
 
-// Add Swagger/OpenAPI
+// ------------------------------------------------------------
+// Swagger
+// ------------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ⭐ Serve index.html and static files
+// ------------------------------------------------------------
+// Serve Frontend (STATIC FILES)
+// ------------------------------------------------------------
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// ------------------------------------------------------------
+// Swagger UI
+// ------------------------------------------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// ------------------------------------------------------------
+// HTTPS Redirect
+// ------------------------------------------------------------
 app.UseHttpsRedirection();
 
-// ⭐ ENABLE SESSION MIDDLEWARE
+// ------------------------------------------------------------
+// SESSION MUST COME BEFORE AUTH
+// ------------------------------------------------------------
 app.UseSession();
 
+// ------------------------------------------------------------
+// Authentication + Authorization
+// ------------------------------------------------------------
+app.UseAuthentication();
 app.UseAuthorization();
 
+// ------------------------------------------------------------
+// Controllers
+// ------------------------------------------------------------
 app.MapControllers();
 
 app.Run();

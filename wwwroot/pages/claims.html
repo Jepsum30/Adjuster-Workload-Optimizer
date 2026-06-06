@@ -18,7 +18,7 @@
 
 <body>
 
-<!-- GLOBAL NAVBAR -->
+<!-- NAVBAR (correct for /pages folder) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
@@ -81,81 +81,78 @@
 </div>
 
 <script>
-    const API_BASE = "https://localhost:7143";
+document.addEventListener("DOMContentLoaded", loadClaims);
 
-    document.addEventListener("DOMContentLoaded", loadClaims);
+async function loadClaims() {
+    const messageDiv = document.getElementById("message");
+    const tbody = document.getElementById("claimsBody");
 
-    function getAdjusterFilter() {
-        const params = new URLSearchParams(window.location.search);
-        return params.get("adjusterId");
-    }
+    tbody.innerHTML = "";
+    messageDiv.innerHTML = "";
 
-    async function loadClaims() {
-        const messageDiv = document.getElementById("message");
-        const tbody = document.getElementById("claimsBody");
-        const adjusterFilter = getAdjusterFilter();
+    let response;
 
-        tbody.innerHTML = "";
-        messageDiv.innerHTML = "";
+    try {
+        // Try ADMIN endpoint first
+        response = await fetch("/api/Claims", {
+            credentials: "include"
+        });
 
-        try {
-            const response = await fetch(`${API_BASE}/api/claims`, {
+        // If forbidden → user is Adjuster → use /my endpoint
+        if (response.status === 403) {
+            response = await fetch("/api/Claims/my", {
                 credentials: "include"
             });
-
-            if (!response.ok) {
-                messageDiv.innerHTML = "<p class='error'>Failed to load claims.</p>";
-                return;
-            }
-
-            let data = await response.json();
-
-            // ⭐ Filter by adjuster if coming from Adjusters page
-            if (adjusterFilter) {
-                data = data.filter(c => c.assignedAdjusterId == adjusterFilter);
-            }
-
-            if (!data || data.length === 0) {
-                messageDiv.innerHTML = "<p>No claims found.</p>";
-                return;
-            }
-
-            data.forEach(c => {
-                const row = document.createElement("tr");
-
-                row.innerHTML = `
-                    <td>${c.claimId}</td>
-                    <td>${c.claimType ?? ""}</td>
-                    <td>${c.jurisdiction ?? ""}</td>
-                    <td>${c.status ?? ""}</td>
-                    <td>
-                        <button class="btn btn-success btn-sm" onclick="recommend(${c.claimId})">
-                            Recommend
-                        </button>
-
-                        <button class="btn btn-secondary btn-sm" onclick="viewClaim(${c.claimId})">
-                            View
-                        </button>
-                    </td>
-                `;
-
-                tbody.appendChild(row);
-            });
-
-        } catch (error) {
-            messageDiv.innerHTML = "<p class='error'>Unable to connect to server.</p>";
         }
-    }
 
-    // ⭐ Redirect to the Assignment Recommendation UI
-    function recommend(id) {
-        window.location.href = `assignment-recommendation.html?claimId=${id}`;
-    }
+        // If still not OK → show error
+        if (!response.ok) {
+            const text = await response.text();
+            messageDiv.innerHTML = `<p class='error'>Failed to load claims. Server said: ${text}</p>`;
+            return;
+        }
 
-    // ⭐ Redirect to Claim Details page
-    function viewClaim(id) {
-        window.location.href = `claim-details.html?claimId=${id}`;
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+            messageDiv.innerHTML = "<p>No claims found.</p>";
+            return;
+        }
+
+        data.forEach(c => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${c.claimId}</td>
+                <td>${c.claimType ?? ""}</td>
+                <td>${c.jurisdiction ?? ""}</td>
+                <td>${c.status ?? ""}</td>
+                <td>
+                    <button class="btn btn-success btn-sm" onclick="recommend(${c.claimId})">
+                        Recommend
+                    </button>
+
+                    <button class="btn btn-secondary btn-sm" onclick="viewClaim(${c.claimId})">
+                        View
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+    } catch (err) {
+        messageDiv.innerHTML = "<p class='error'>Unable to connect to server.</p>";
     }
+}
+
+function recommend(id) {
+    window.location.href = `assignment-recommendation.html?claimId=${id}`;
+}
+
+function viewClaim(id) {
+    window.location.href = `claim-details.html?claimId=${id}`;
+}
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -18,8 +18,32 @@
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-dark bg-dark p-2">
-    <a href="adjusters.html" class="btn btn-outline-light">Back to Adjusters</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+
+                <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="claims.html">Claims</a></li>
+                <li class="nav-item"><a class="nav-link" href="assignments.html">Assignments</a></li>
+                <li class="nav-item"><a class="nav-link" href="adjusters.html">Adjusters</a></li>
+                <li class="nav-item"><a class="nav-link" href="performance.html">Performance</a></li>
+                <li class="nav-item"><a class="nav-link" href="search.html">Search</a></li>
+
+                <li class="nav-item"><a class="nav-link" href="register.html">Register</a></li>
+                <li class="nav-item"><a class="nav-link" href="change-password.html">Change Password</a></li>
+                <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+
+            </ul>
+        </div>
+    </div>
 </nav>
 
 <div class="container mt-4">
@@ -82,7 +106,7 @@
 </div>
 
 <script>
-    const API_BASE = "https://localhost:7143";
+    const API_BASE = "";
 
     // Read adjusterId from URL
     function getAdjusterId() {
@@ -108,7 +132,7 @@
     // Load adjuster details
     async function loadAdjuster() {
         try {
-            const res = await fetch(`${API_BASE}/api/adjusters/${adjusterId}`, {
+            const res = await fetch(`${API_BASE}/api/Adjusters/${adjusterId}`, {
                 credentials: "include"
             });
 
@@ -139,7 +163,7 @@
         const tbody = document.getElementById("assignedClaims");
 
         try {
-            const res = await fetch(`${API_BASE}/api/claims`, {
+            const res = await fetch(`${API_BASE}/api/Claims`, {
                 credentials: "include"
             });
 
@@ -189,7 +213,7 @@
         const tbody = document.getElementById("performanceHistory");
 
         try {
-            const res = await fetch(`${API_BASE}/api/performancehistory`, {
+            const res = await fetch(`${API_BASE}/api/Performancehistory`, {
                 credentials: "include"
             });
 
@@ -240,7 +264,6 @@
     loadAssignedClaims();
     loadPerformanceHistory();
 </script>
-
 
 </body>
 </html>

@@ -18,7 +18,7 @@
 
 <body>
 
-<!-- GLOBAL NAVBAR -->
+<!-- NAVBAR (correct for /pages folder) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
@@ -81,7 +81,7 @@
 </div>
 
 <script>
-    const API_BASE = "https://localhost:7143";
+    const API_BASE = "";
 
     document.addEventListener("DOMContentLoaded", loadPerformance);
 
@@ -110,7 +110,7 @@
 
             let data = await response.json();
 
-            // ⭐ Filter by adjuster if coming from Adjuster Details page
+            // Filter by adjuster if coming from Adjuster Details page
             if (adjusterFilter) {
                 data = data.filter(p => p.adjusterId == adjusterFilter);
             }

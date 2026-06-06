@@ -16,10 +16,35 @@
 
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-dark bg-dark p-2">
-    <a href="dashboard.html" class="btn btn-outline-light">Back to Dashboard</a>
+<!-- NAVBAR (corrected paths for /pages folder) -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="dashboard.html">Adjuster Optimizer</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+
+                <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="claims.html">Claims</a></li>
+                <li class="nav-item"><a class="nav-link" href="assignments.html">Assignments</a></li>
+                <li class="nav-item"><a class="nav-link" href="adjusters.html">Adjusters</a></li>
+                <li class="nav-item"><a class="nav-link" href="performance.html">Performance</a></li>
+                <li class="nav-item"><a class="nav-link" href="search.html">Search</a></li>
+
+                <li class="nav-item"><a class="nav-link" href="register.html">Register</a></li>
+                <li class="nav-item"><a class="nav-link" href="change-password.html">Change Password</a></li>
+                <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+
+            </ul>
+        </div>
+    </div>
 </nav>
+
 
 <div class="container mt-4">
 
@@ -29,7 +54,7 @@
     </p>
 
     <!-- CLAIM SELECTOR -->
-    <div class="card p-3 shadow-sm mb-4">
+    <div class="card p-3 shadow-sm mb-4" id="claimSelectorCard">
         <h4>Select Claim</h4>
 
         <div class="row">
@@ -66,14 +91,14 @@
 </div>
 
 <script>
-const API_BASE = "https://localhost:7143";
+const API_BASE = "";
 
-// Load claims into dropdown (only if no claimId is provided)
+// Load claims into dropdown
 async function loadClaims() {
     const select = document.getElementById("claimSelect");
 
     try {
-        const res = await fetch(`${API_BASE}/api/claims`, {
+        const res = await fetch(`${API_BASE}/api/Claims`, {
             credentials: "include"
         });
 
@@ -102,18 +127,14 @@ function getClaimIdFromUrl() {
     return params.get("claimId");
 }
 
-// Auto-run recommendation
+// Auto-run recommendation if claimId provided
 async function autoLoadClaim() {
     const claimId = getClaimIdFromUrl();
 
     if (claimId) {
-        // Hide dropdown since user came from Claims page
-        document.querySelector(".card").style.display = "none";
-
-        // Auto-run recommendation
+        document.getElementById("claimSelectorCard").style.display = "none";
         await getRecommendation(claimId);
     } else {
-        // No claimId passed → load dropdown normally
         loadClaims();
     }
 }
@@ -125,7 +146,7 @@ async function getRecommendation(claimIdOverride = null) {
     if (!claimId) return alert("Please select a claim first.");
 
     try {
-        const res = await fetch(`${API_BASE}/api/assignments/recommend/${claimId}`, {
+        const res = await fetch(`${API_BASE}/api/Assignments/recommend/${claimId}`, {
             credentials: "include"
         });
 
@@ -138,7 +159,6 @@ async function getRecommendation(claimIdOverride = null) {
 
         document.getElementById("resultSection").style.display = "block";
 
-        // Adjuster info
         document.getElementById("adjusterInfo").innerHTML = `
             <div class="alert alert-info">
                 <strong>${data.adjuster.name}</strong><br>
@@ -148,7 +168,6 @@ async function getRecommendation(claimIdOverride = null) {
             </div>
         `;
 
-        // Explanation
         const exp = data.explanation;
         document.getElementById("explanation").innerHTML = `
             <div><strong>Skill Match:</strong> ${exp.skillMatchReason}</div>
@@ -170,7 +189,7 @@ async function autoAssign() {
     const claimId = getClaimIdFromUrl() || document.getElementById("claimSelect").value;
 
     try {
-        const res = await fetch(`${API_BASE}/api/assignments/auto-assign/${claimId}`, {
+        const res = await fetch(`${API_BASE}/api/Assignments/auto-assign/${claimId}`, {
             method: "POST",
             credentials: "include"
         });
