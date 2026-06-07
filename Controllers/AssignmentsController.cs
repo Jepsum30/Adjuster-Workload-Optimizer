@@ -1,101 +1,27 @@
-using AdjusterOptimizerAPI.Data;
-using AdjusterOptimizerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AdjusterOptimizerAPI.Attributes;
+using AdjusterOptimizerAPI.Data;
+using AdjusterOptimizerAPI.Models;
 
-namespace AdjusterOptimizerAPI.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class AssignmentsController : ControllerBase
 {
-    /// <summary>
-    /// Handles all operations related to claim-to-adjuster assignments,
-    /// including CRUD actions and integration with the assignment engine.
-    /// </summary>
-    [ApiController]
-    [Route("api/[controller]")]
-    [RoleAuthorize("Admin", "Supervisor")]
-    public class AssignmentsController : ControllerBase
+    private readonly ApplicationDbContext _context;
+
+    public AssignmentsController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public AssignmentsController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Assignment>>> GetAll()
+    {
+        var assignments = await _context.Assignments
+            .Include(a => a.Adjuster)
+            .Include(a => a.Claim)
+            .ToListAsync();
 
-        // ------------------------------------------------------------
-        // GET ALL ASSIGNMENTS
-        // ------------------------------------------------------------
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var assignments = await _context.Assignments
-                .Include(a => a.Adjuster)
-                .Include(a => a.Claim)
-                .ToListAsync();
-
-            return Ok(assignments);
-        }
-
-        // ------------------------------------------------------------
-        // GET ASSIGNMENT BY ID
-        // ------------------------------------------------------------
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var assignment = await _context.Assignments
-                .Include(a => a.Adjuster)
-                .Include(a => a.Claim)
-                .FirstOrDefaultAsync(a => a.AssignmentId == id);
-
-            if (assignment == null)
-                return NotFound("Assignment not found.");
-
-            return Ok(assignment);
-        }
-
-        // ------------------------------------------------------------
-        // CREATE NEW ASSIGNMENT
-        // ------------------------------------------------------------
-        [HttpPost]
-        public async Task<IActionResult> Create(Assignment model)
-        {
-            _context.Assignments.Add(model);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById),
-                new { id = model.AssignmentId }, model);
-        }
-
-        // ------------------------------------------------------------
-        // UPDATE EXISTING ASSIGNMENT
-        // ------------------------------------------------------------
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Assignment model)
-        {
-            if (id != model.AssignmentId)
-                return BadRequest("Assignment ID mismatch.");
-
-            _context.Entry(model).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // ------------------------------------------------------------
-        // DELETE ASSIGNMENT
-        // ------------------------------------------------------------
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var assignment = await _context.Assignments.FindAsync(id);
-
-            if (assignment == null)
-                return NotFound("Assignment not found.");
-
-            _context.Assignments.Remove(assignment);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
+        return Ok(assignments);
     }
 }

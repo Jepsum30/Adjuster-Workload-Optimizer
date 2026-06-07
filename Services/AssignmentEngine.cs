@@ -38,66 +38,86 @@ namespace AdjusterOptimizerAPI.Services
 
                 double score = 0;
 
-                // Skill match
-                if (string.Equals(adj.PrimarySkill, claim.ClaimType, StringComparison.OrdinalIgnoreCase))
+                // ⭐ SKILL MATCH (RequiredSkill vs PrimarySkill)
+                if (!string.IsNullOrWhiteSpace(claim.RequiredSkill) &&
+                    string.Equals(adj.PrimarySkill, claim.RequiredSkill, StringComparison.OrdinalIgnoreCase))
                 {
                     score += 40;
-                    explanation.SkillMatchReason = $"Primary skill matches claim type ({adj.PrimarySkill}).";
+                    explanation.SkillMatchReason =
+                        $"Primary skill matches required skill ({adj.PrimarySkill}).";
                 }
                 else
                 {
-                    explanation.SkillMatchReason = $"Primary skill ({adj.PrimarySkill}) differs from claim type ({claim.ClaimType}).";
+                    explanation.SkillMatchReason =
+                        $"Primary skill ({adj.PrimarySkill}) does not match required skill ({claim.RequiredSkill}).";
                 }
 
-                // Jurisdiction match
+                // ⭐ SKILL LEVEL MATCH (int)
+                if (adj.SkillLevel >= claim.SeverityScore)
+                {
+                    score += 20;
+                }
+                else
+                {
+                }
+
+                // ⭐ JURISDICTION MATCH
                 if (string.Equals(adj.Jurisdiction, claim.Jurisdiction, StringComparison.OrdinalIgnoreCase))
                 {
-                    score += 25;
-                    explanation.JurisdictionReason = $"Jurisdiction matches ({adj.Jurisdiction}).";
+                    score += 15;
+                    explanation.JurisdictionReason =
+                        $"Jurisdiction matches ({adj.Jurisdiction}).";
                 }
                 else
                 {
-                    explanation.JurisdictionReason = $"Jurisdiction mismatch: adjuster {adj.Jurisdiction}, claim {claim.Jurisdiction}.";
+                    explanation.JurisdictionReason =
+                        $"Jurisdiction mismatch: adjuster {adj.Jurisdiction}, claim {claim.Jurisdiction}.";
                 }
 
-                // Workload (fewer active assignments = better)
-                var activeAssignments = _context.Assignments
-                    .Count(a => a.AdjusterId == adj.AdjusterId);
+                // ⭐ WORKLOAD
+                var activeAssignments = await _context.Assignments
+                    .CountAsync(a => a.AdjusterId == adj.AdjusterId);
 
                 if (activeAssignments <= 3)
                 {
-                    score += 20;
-                    explanation.WorkloadReason = $"Low workload ({activeAssignments} active assignments).";
+                    score += 15;
+                    explanation.WorkloadReason = $"Low workload ({activeAssignments}).";
                 }
                 else if (activeAssignments <= 7)
                 {
-                    score += 10;
-                    explanation.WorkloadReason = $"Moderate workload ({activeAssignments} active assignments).";
+                    score += 5;
+                    explanation.WorkloadReason = $"Moderate workload ({activeAssignments}).";
                 }
                 else
                 {
-                    explanation.WorkloadReason = $"High workload ({activeAssignments} active assignments).";
+                    explanation.WorkloadReason = $"High workload ({activeAssignments}).";
                 }
 
-                // Performance score (assuming 0–100)
+                // ⭐ PERFORMANCE SCORE (double)
                 if (adj.PerformanceScore >= 90)
                 {
-                    score += 15;
-                    explanation.PerformanceReason = $"Excellent performance score ({adj.PerformanceScore}).";
+                    score += 10;
+                    explanation.PerformanceReason =
+                        $"Excellent performance score ({adj.PerformanceScore}).";
                 }
                 else if (adj.PerformanceScore >= 75)
                 {
-                    score += 8;
-                    explanation.PerformanceReason = $"Good performance score ({adj.PerformanceScore}).";
+                    score += 5;
+                    explanation.PerformanceReason =
+                        $"Good performance score ({adj.PerformanceScore}).";
                 }
                 else
                 {
-                    explanation.PerformanceReason = $"Lower performance score ({adj.PerformanceScore}).";
+                    explanation.PerformanceReason =
+                        $"Lower performance score ({adj.PerformanceScore}).";
                 }
+
+                // ⭐ COMPLEXITY PENALTY
+                score -= claim.ComplexityScore * 0.5;
 
                 explanation.FinalScore = score;
                 explanation.Summary =
-                    $"Adjuster {adj.AdjusterId} scored {score} based on skill, jurisdiction, workload, and performance.";
+                    $"Adjuster {adj.AdjusterId} scored {score} based on skill, level, jurisdiction, workload, performance, and complexity.";
 
                 if (score > bestScore)
                 {

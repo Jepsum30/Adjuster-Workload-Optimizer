@@ -1,14 +1,13 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
+using AdjusterOptimizerAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [RoleAuthorize("Admin")]
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -19,9 +18,10 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET ALL USERS
+        // GET ALL USERS (Admin only)
         // ------------------------------------------------------------
         [HttpGet]
+        [RoleAuthorize("Admin")]
         public async Task<IActionResult> GetAll()
         {
             var users = await _context.Users.ToListAsync();
@@ -29,11 +29,20 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET USER BY ID
+        // GET USER BY ID (Admin or self)
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var sessionUserId = HttpContext.Session.GetInt32("USER_ID");
+            var sessionRole = HttpContext.Session.GetString("ROLE");
+
+            if (sessionUserId == null)
+                return Unauthorized("Not logged in.");
+
+            if (sessionRole != "Admin" && sessionUserId != id)
+                return Unauthorized("Access denied.");
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
                 return NotFound("User not found.");
@@ -45,40 +54,83 @@ namespace AdjusterOptimizerAPI.Controllers
         // REGISTER NEW USER
         // ------------------------------------------------------------
         [HttpPost("register")]
-        public async Task<IActionResult> Register(User model)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
-            if (!ValidatePassword(model.PasswordHash))
+            if (!ValidatePassword(req.Password))
+                return BadRequest("Password must include uppercase, lowercase, number, and symbol.");
+
+            var existing = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == req.Username);
+
+            if (existing != null)
+                return BadRequest("Username or email already exists.");
+
+            var user = new User
             {
-                return BadRequest("Password must be at least 8 characters, include upper/lowercase letters, a number, and a symbol.");
-            }
+                Username = req.Username,
+                Role = req.Role,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password)
+            };
 
-            // Hash password
-            model.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.PasswordHash);
-
-            _context.Users.Add(model);
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            return Ok("Account created successfully.");
+        }
+
+        // ------------------------------------------------------------
+        // LOGIN
+        // ------------------------------------------------------------
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest req)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == req.Username);
+
+            if (user == null)
+                return Unauthorized("Invalid username or password.");
+
+            if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+                return Unauthorized("Invalid username or password.");
+
+            // Store session
+            HttpContext.Session.SetInt32("USER_ID", user.UserId);
+            HttpContext.Session.SetString("ROLE", user.Role);
 
             return Ok(new
             {
-                message = "User registered successfully.",
-                model.UserId
+                message = "Login successful.",
+                role = user.Role,
+                userId = user.UserId
             });
         }
 
         // ------------------------------------------------------------
-        // CHANGE PASSWORD
+        // LOGOUT
         // ------------------------------------------------------------
-        [HttpPut("change-password/{id}")]
-        public async Task<IActionResult> ChangePassword(int id, [FromBody] string newPassword)
+        [HttpPost("logout")]
+        public IActionResult Logout()
         {
-            var user = await _context.Users.FindAsync(id);
+            HttpContext.Session.Clear();
+            return Ok("Logged out.");
+        }
+
+        // ------------------------------------------------------------
+        // CHANGE PASSWORD (self only)
+        // ------------------------------------------------------------
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] string newPassword)
+        {
+            var userId = HttpContext.Session.GetInt32("USER_ID");
+            if (userId == null)
+                return Unauthorized("Not logged in.");
+
+            var user = await _context.Users.FindAsync(userId);
             if (user == null)
                 return NotFound("User not found.");
 
             if (!ValidatePassword(newPassword))
-            {
-                return BadRequest("Password must be at least 8 characters, include upper/lowercase letters, a number, and a symbol.");
-            }
+                return BadRequest("Password must include uppercase, lowercase, number, and symbol.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             await _context.SaveChangesAsync();
@@ -87,62 +139,35 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // CREATE USER (ADMIN ONLY)
-        // ------------------------------------------------------------
-        [HttpPost]
-        public async Task<IActionResult> Create(User model)
-        {
-            _context.Users.Add(model);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = model.UserId }, model);
-        }
-
-        // ------------------------------------------------------------
-        // UPDATE USER
-        // ------------------------------------------------------------
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, User model)
-        {
-            if (id != model.UserId)
-                return BadRequest("User ID mismatch.");
-
-            _context.Entry(model).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // ------------------------------------------------------------
-        // DELETE USER
+        // DELETE USER (Admin only)
         // ------------------------------------------------------------
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [RoleAuthorize("Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
                 return NotFound("User not found.");
 
+            if (user.Role == "Admin")
+                return BadRequest("Cannot delete another Admin.");
+
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("User deleted successfully.");
         }
 
         // ------------------------------------------------------------
-        // PASSWORD VALIDATION
+        // VALIDATE PASSWORD
         // ------------------------------------------------------------
         private bool ValidatePassword(string password)
         {
-            if (string.IsNullOrEmpty(password) || password.Length < 8)
-                return false;
-
-            bool hasUpper = password.Any(char.IsUpper);
-            bool hasLower = password.Any(char.IsLower);
-            bool hasDigit = password.Any(char.IsDigit);
-            bool hasSymbol = password.Any(c => !char.IsLetterOrDigit(c));
-
-            return hasUpper && hasLower && hasDigit && hasSymbol;
+            return !string.IsNullOrEmpty(password) &&
+                   password.Any(char.IsUpper) &&
+                   password.Any(char.IsLower) &&
+                   password.Any(char.IsDigit) &&
+                   password.Any(c => !char.IsLetterOrDigit(c));
         }
     }
 }

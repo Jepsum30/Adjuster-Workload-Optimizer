@@ -1,30 +1,26 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
+using AdjusterOptimizerAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
-    /// <summary>
-    /// Handles all operations related to adjusters, including
-    /// CRUD actions and future workload/performance updates.
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [RoleAuthorize("Admin", "Manager")]
     public class AdjustersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly AssignmentEngine _engine;
 
-        public AdjustersController(ApplicationDbContext context)
+        public AdjustersController(ApplicationDbContext context, AssignmentEngine engine)
         {
             _context = context;
+            _engine = engine;
         }
 
-        // ------------------------------------------------------------
-        // GET ALL ADJUSTERS
-        // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -32,9 +28,6 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(adjusters);
         }
 
-        // ------------------------------------------------------------
-        // GET ADJUSTER BY ID
-        // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -46,9 +39,6 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(adjuster);
         }
 
-        // ------------------------------------------------------------
-        // CREATE NEW ADJUSTER
-        // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(Adjuster model)
         {
@@ -59,9 +49,6 @@ namespace AdjusterOptimizerAPI.Controllers
                 new { id = model.AdjusterId }, model);
         }
 
-        // ------------------------------------------------------------
-        // UPDATE EXISTING ADJUSTER
-        // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Adjuster model)
         {
@@ -74,21 +61,41 @@ namespace AdjusterOptimizerAPI.Controllers
             return NoContent();
         }
 
-        // ------------------------------------------------------------
-        // DELETE ADJUSTER
-        // ------------------------------------------------------------
+        // DELETE with auto‑reassign (Admin only)
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [RoleAuthorize("Admin")]
+        public async Task<IActionResult> DeleteAdjuster(int id)
         {
             var adjuster = await _context.Adjusters.FindAsync(id);
-
             if (adjuster == null)
                 return NotFound("Adjuster not found.");
+
+            var claims = await _context.Claims
+                .Where(c => c.AssignedAdjusterId == id)
+                .ToListAsync();
+
+            int reassignedCount = 0;
+
+            foreach (var claim in claims)
+            {
+                var (newAdj, explanation) =
+                    await _engine.RecommendAdjusterForClaimAsync(claim.ClaimId);
+
+                claim.AssignedAdjusterId = newAdj.AdjusterId;
+
+                _context.Assignments.Add(new Assignment
+                {
+                    ClaimId = claim.ClaimId,
+                    AdjusterId = newAdj.AdjusterId
+                });
+
+                reassignedCount++;
+            }
 
             _context.Adjusters.Remove(adjuster);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok($"Adjuster {id} deleted. {reassignedCount} claims were auto‑reassigned.");
         }
     }
 }

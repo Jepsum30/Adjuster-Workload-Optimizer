@@ -6,10 +6,6 @@ using AdjusterOptimizerAPI.Attributes;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
-    /// <summary>
-    /// Handles all operations related to insurance claims,
-    /// including CRUD actions and wildcard search functionality.
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class ClaimsController : ControllerBase
@@ -44,8 +40,11 @@ namespace AdjusterOptimizerAPI.Controllers
             if (userId == null)
                 return Unauthorized("Not logged in.");
 
-            var claims = await _context.Claims
-                .Where(c => c.AssignedAdjusterId == userId)
+            // Claims assigned via assignments table
+            var claims = await _context.Assignments
+                .Where(a => a.AdjusterId == userId)
+                .Include(a => a.Claim)
+                .Select(a => a.Claim)
                 .ToListAsync();
 
             return Ok(claims);
@@ -53,8 +52,6 @@ namespace AdjusterOptimizerAPI.Controllers
 
         // ------------------------------------------------------------
         // GET CLAIM BY ID
-        // Admin: can view any claim
-        // Adjuster: can only view their own assigned claim
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -70,8 +67,14 @@ namespace AdjusterOptimizerAPI.Controllers
             if (role == "Admin")
                 return Ok(claim);
 
-            if (role == "Adjuster" && claim.AssignedAdjusterId == userId)
-                return Ok(claim);
+            if (role == "Adjuster")
+            {
+                bool assignedToAdjuster = await _context.Assignments
+                    .AnyAsync(a => a.ClaimId == id && a.AdjusterId == userId);
+
+                if (assignedToAdjuster)
+                    return Ok(claim);
+            }
 
             return Forbid();
         }
@@ -126,8 +129,6 @@ namespace AdjusterOptimizerAPI.Controllers
 
         // ------------------------------------------------------------
         // SEARCH CLAIMS
-        // Admin: searches all claims
-        // Adjuster: searches only their assigned claims
         // ------------------------------------------------------------
         [HttpGet("search")]
         public async Task<IActionResult> SearchClaims(string query)
@@ -142,7 +143,11 @@ namespace AdjusterOptimizerAPI.Controllers
 
             if (role == "Adjuster")
             {
-                baseQuery = baseQuery.Where(c => c.AssignedAdjusterId == userId);
+                baseQuery = _context.Assignments
+                    .Where(a => a.AdjusterId == userId)
+                    .Include(a => a.Claim)
+                    .Select(a => a.Claim!)
+                    .Where(c => c != null)!;
             }
             else if (role != "Admin")
             {

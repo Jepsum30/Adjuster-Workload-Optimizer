@@ -3,30 +3,24 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdjusterOptimizerAPI.Models
 {
-    /// <summary>
-    /// Represents an insurance adjuster, including skill level,
-    /// specialty, jurisdiction, workload, and performance metrics.
-    /// </summary>
+    [Table("adjusters")]
     public class Adjuster
     {
         [Column("ADJUSTER_ID")]
         public int AdjusterId { get; set; }
 
         [Column("FIRST_NAME")]
-        public string First_Name { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
 
         [Column("LAST_NAME")]
-        public string Last_Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
 
+        // SKILL_LEVEL is INT in DB
         [Column("SKILL_LEVEL")]
         public int SkillLevel { get; set; }
 
         [Column("SPECIALTY")]
         public string Specialty { get; set; } = string.Empty;
-
-        // Only add this if PRIMARY_SKILL exists in your MySQL table
-        [Column("PRIMARY_SKILL")]
-        public string? PrimarySkill { get; set; }
 
         [Column("JURISDICTION")]
         public string Jurisdiction { get; set; } = string.Empty;
@@ -34,13 +28,18 @@ namespace AdjusterOptimizerAPI.Models
         [Column("WORKLOAD")]
         public int Workload { get; set; }
 
+        // PERFORMANCE_SCORE is DOUBLE in DB → use double
         [Column("PERFORMANCE_SCORE")]
-        public decimal PerformanceScore { get; set; }
+        public double PerformanceScore { get; set; }
 
         [Column("TENURE_YEARS")]
         public int TenureYears { get; set; }
 
-        public List<Assignment> Assignments { get; set; } = new();
-        public List<PerformanceHistory> PerformanceHistory { get; set; } = new();
+        // PRIMARY_SKILL exists in DB but was missing in your model
+        [Column("PRIMARY_SKILL")]
+        public string? PrimarySkill { get; set; }
+
+        public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
+        public ICollection<PerformanceHistory> PerformanceHistory { get; set; } = new List<PerformanceHistory>();
     }
 }

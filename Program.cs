@@ -28,7 +28,25 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ------------------------------------------------------------
 // Dependency Injection
 // ------------------------------------------------------------
-builder.Services.AddScoped<AssignmentEngine>();
+builder.Services.AddScoped<AssignmentEngine>();   // ⭐ Required for auto‑reassign delete
+
+// ------------------------------------------------------------
+// CORS — REQUIRED for HTTPS frontend + cookies
+// ------------------------------------------------------------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins(
+            "https://127.0.0.1:5500",
+            "https://localhost:5500",
+            "https://localhost:7143"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 // ------------------------------------------------------------
 // SESSION — REQUIRED for cookie‑based auth
@@ -39,13 +57,8 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-
-    // HTTPS ONLY (required for class security)
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-
-    // SameSite=None because cookies are secure
     options.Cookie.SameSite = SameSiteMode.None;
-
     options.IdleTimeout = TimeSpan.FromHours(1);
 });
 
@@ -58,10 +71,15 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // ------------------------------------------------------------
-// Serve Frontend (STATIC FILES)
+// STATIC FILES — MUST COME BEFORE ROUTING
 // ------------------------------------------------------------
 app.UseDefaultFiles();
-app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true,   // ⭐ Required for pages with query params
+    DefaultContentType = "text/html"
+});
 
 // ------------------------------------------------------------
 // Swagger UI
@@ -76,6 +94,11 @@ if (app.Environment.IsDevelopment())
 // HTTPS Redirect
 // ------------------------------------------------------------
 app.UseHttpsRedirection();
+
+// ------------------------------------------------------------
+// CORS MUST COME BEFORE SESSION + AUTH
+// ------------------------------------------------------------
+app.UseCors("FrontendPolicy");
 
 // ------------------------------------------------------------
 // SESSION MUST COME BEFORE AUTH

@@ -3,10 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdjusterOptimizerAPI.Models
 {
-    /// <summary>
-    /// Represents a claim assignment made by the system or a supervisor.
-    /// Includes metadata such as score, explanation, and assignment date.
-    /// </summary>
+    [Table("assignments")]
     public class Assignment
     {
         [Column("ASSIGNMENT_ID")]
@@ -30,8 +27,7 @@ namespace AdjusterOptimizerAPI.Models
         [Column("EXPLANATION")]
         public string Explanation { get; set; } = string.Empty;
 
-        // Navigation properties
-        public Adjuster Adjuster { get; set; } = null!;
-        public Claim Claim { get; set; } = null!;
+        public Claim? Claim { get; set; }
+        public Adjuster? Adjuster { get; set; }
     }
 }

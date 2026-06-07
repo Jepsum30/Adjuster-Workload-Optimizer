@@ -30,7 +30,6 @@ namespace AdjusterOptimizerAPI.Controllers
         {
             var records = await _context.PerformanceHistory
                 .Include(p => p.Adjuster)
-                .Include(p => p.Claim)
                 .ToListAsync();
 
             return Ok(records);
@@ -44,7 +43,6 @@ namespace AdjusterOptimizerAPI.Controllers
         {
             var record = await _context.PerformanceHistory
                 .Include(p => p.Adjuster)
-                .Include(p => p.Claim)
                 .FirstOrDefaultAsync(p => p.RecordId == id);
 
             if (record == null)
