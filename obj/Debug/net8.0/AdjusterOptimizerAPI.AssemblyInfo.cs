@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AdjusterOptimizerAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+50938584e9e6a77bf9e8400ff49da138e8c21ec8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8960a91b5375ce668b4b48c7ad2b74c58c69cfe8")]
 [assembly: System.Reflection.AssemblyProductAttribute("AdjusterOptimizerAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AdjusterOptimizerAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

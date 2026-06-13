@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Security.Claims;
 
 namespace AdjusterOptimizerAPI.Attributes
 {
-    /// <summary>
-    /// Custom authorization attribute that restricts access
-    /// to users whose session role matches one of the allowed roles.
-    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
     public class RoleAuthorizeAttribute : Attribute, IAuthorizationFilter
     {
@@ -19,12 +16,10 @@ namespace AdjusterOptimizerAPI.Attributes
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
-            var httpContext = context.HttpContext;
+            var user = context.HttpContext.User;
 
-            // Check login status
-            var role = httpContext.Session.GetString("ROLE");
-
-            if (role == null)
+            // Not logged in
+            if (!user.Identity?.IsAuthenticated ?? true)
             {
                 context.Result = new UnauthorizedObjectResult(new
                 {
@@ -33,7 +28,19 @@ namespace AdjusterOptimizerAPI.Attributes
                 return;
             }
 
-            // Check if user has ANY allowed role
+            // Extract role from claims
+            var role = user.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (role == null)
+            {
+                context.Result = new UnauthorizedObjectResult(new
+                {
+                    message = "User role not found."
+                });
+                return;
+            }
+
+            // Check if role is allowed
             bool authorized = _requiredRoles
                 .Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase));
 

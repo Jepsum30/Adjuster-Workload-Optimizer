@@ -12,7 +12,7 @@ namespace AdjusterOptimizerAPI.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [RoleAuthorize("Admin", "Supervisor")]
+    [RoleAuthorize("Admin", "Supervisor")]   // Claims-based authorization
     public class PerformanceHistoryController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

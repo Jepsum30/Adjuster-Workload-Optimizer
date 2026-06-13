@@ -2,6 +2,9 @@ using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using BCrypt.Net;
 
 namespace AdjusterOptimizerAPI.Controllers
@@ -18,7 +21,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // LOGIN
+        // LOGIN — Cookie Authentication + Claims
         // ------------------------------------------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -29,27 +32,41 @@ namespace AdjusterOptimizerAPI.Controllers
                 return BadRequest(new { message = "Username and password are required." });
             }
 
-            // Retrieve user by username
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == request.Username);
 
             if (user == null)
-            {
                 return Unauthorized(new { message = "Invalid username or password." });
-            }
 
-            // Validate password hash
             bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
 
             if (!passwordValid)
-            {
                 return Unauthorized(new { message = "Invalid username or password." });
-            }
 
-            // Store session values
-            HttpContext.Session.SetInt32("USER_ID", user.UserId);
-            HttpContext.Session.SetString("ROLE", user.Role);
-            HttpContext.Session.SetString("USERNAME", user.Username);
+            // --------------------------------------------------------
+            // BUILD CLAIMS IDENTITY
+            // --------------------------------------------------------
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new System.Security.Claims.Claim(ClaimTypes.Name, user.Username),
+                new System.Security.Claims.Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var identity = new ClaimsIdentity(claims, "AuthCookie");
+            var principal = new ClaimsPrincipal(identity);
+
+            // --------------------------------------------------------
+            // SIGN IN — ISSUE AUTH COOKIE
+            // --------------------------------------------------------
+            await HttpContext.SignInAsync(
+                "AuthCookie",
+                principal,
+                new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTime.UtcNow.AddHours(1)
+                });
 
             return Ok(new
             {
@@ -64,22 +81,13 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // LOGOUT
+        // LOGOUT — Clears cookie
         // ------------------------------------------------------------
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync("AuthCookie");
             return Ok(new { message = "Logged out successfully." });
         }
-    }
-
-    // ------------------------------------------------------------
-    // LOGIN REQUEST MODEL
-    // ------------------------------------------------------------
-    public class LoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
     }
 }

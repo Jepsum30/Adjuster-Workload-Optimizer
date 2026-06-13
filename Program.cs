@@ -1,6 +1,7 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,28 +29,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ------------------------------------------------------------
 // Dependency Injection
 // ------------------------------------------------------------
-builder.Services.AddScoped<AssignmentEngine>();   // ⭐ Required for auto‑reassign delete
+builder.Services.AddScoped<AssignmentEngine>();
 
 // ------------------------------------------------------------
-// CORS — REQUIRED for HTTPS frontend + cookies
+// NO CORS NEEDED FOR SAME-ORIGIN
 // ------------------------------------------------------------
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("FrontendPolicy", policy =>
-    {
-        policy.WithOrigins(
-            "https://127.0.0.1:5500",
-            "https://localhost:5500",
-            "https://localhost:7143"
-        )
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
-    });
-});
 
 // ------------------------------------------------------------
-// SESSION — REQUIRED for cookie‑based auth
+// SESSION — SAME-ORIGIN COOKIE
 // ------------------------------------------------------------
 builder.Services.AddDistributedMemoryCache();
 
@@ -57,10 +44,38 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+
+    // ⭐ SAME-ORIGIN SETTINGS ⭐
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+
+    // ⭐ DO NOT SET DOMAIN ⭐
+    // Chrome will automatically bind to https://localhost:7143
+
+    options.Cookie.Path = "/";
     options.IdleTimeout = TimeSpan.FromHours(1);
 });
+
+// ------------------------------------------------------------
+// AUTH COOKIE — SAME-ORIGIN COOKIE
+// ------------------------------------------------------------
+builder.Services.AddAuthentication("AuthCookie")
+    .AddCookie("AuthCookie", options =>
+    {
+        options.LoginPath = "/pages/login.html";
+        options.AccessDeniedPath = "/pages/access-denied.html";
+
+        options.Cookie.HttpOnly = true;
+
+        // ⭐ SAME-ORIGIN SETTINGS ⭐
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+
+        // ⭐ DO NOT SET DOMAIN ⭐
+        options.Cookie.Path = "/";
+    });
+
+builder.Services.AddAuthorization();
 
 // ------------------------------------------------------------
 // Swagger
@@ -69,17 +84,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-// ------------------------------------------------------------
-// STATIC FILES — MUST COME BEFORE ROUTING
-// ------------------------------------------------------------
-app.UseDefaultFiles();
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    ServeUnknownFileTypes = true,   // ⭐ Required for pages with query params
-    DefaultContentType = "text/html"
-});
 
 // ------------------------------------------------------------
 // Swagger UI
@@ -96,23 +100,25 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // ------------------------------------------------------------
-// CORS MUST COME BEFORE SESSION + AUTH
+// STATIC FILES FIRST (serves your frontend)
 // ------------------------------------------------------------
-app.UseCors("FrontendPolicy");
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 // ------------------------------------------------------------
-// SESSION MUST COME BEFORE AUTH
+// ROUTING
+// ------------------------------------------------------------
+app.UseRouting();
+
+// ------------------------------------------------------------
+// SESSION + AUTH
 // ------------------------------------------------------------
 app.UseSession();
-
-// ------------------------------------------------------------
-// Authentication + Authorization
-// ------------------------------------------------------------
 app.UseAuthentication();
 app.UseAuthorization();
 
 // ------------------------------------------------------------
-// Controllers
+// API Controllers
 // ------------------------------------------------------------
 app.MapControllers();
 

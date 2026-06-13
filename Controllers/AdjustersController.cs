@@ -9,7 +9,7 @@ namespace AdjusterOptimizerAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [RoleAuthorize("Admin", "Manager")]
+    [RoleAuthorize("Admin", "Manager")]   // Claims-based authorization
     public class AdjustersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -21,6 +21,9 @@ namespace AdjusterOptimizerAPI.Controllers
             _engine = engine;
         }
 
+        // ------------------------------------------------------------
+        // GET: api/Adjusters
+        // ------------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -28,6 +31,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(adjusters);
         }
 
+        // ------------------------------------------------------------
+        // GET: api/Adjusters/{id}
+        // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -39,6 +45,9 @@ namespace AdjusterOptimizerAPI.Controllers
             return Ok(adjuster);
         }
 
+        // ------------------------------------------------------------
+        // POST: api/Adjusters
+        // ------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> Create(Adjuster model)
         {
@@ -49,6 +58,9 @@ namespace AdjusterOptimizerAPI.Controllers
                 new { id = model.AdjusterId }, model);
         }
 
+        // ------------------------------------------------------------
+        // PUT: api/Adjusters/{id}
+        // ------------------------------------------------------------
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Adjuster model)
         {
@@ -61,15 +73,19 @@ namespace AdjusterOptimizerAPI.Controllers
             return NoContent();
         }
 
-        // DELETE with auto‑reassign (Admin only)
+        // ------------------------------------------------------------
+        // DELETE: api/Adjusters/{id}
+        // Admin only
+        // ------------------------------------------------------------
         [HttpDelete("{id}")]
-        [RoleAuthorize("Admin")]
+        [RoleAuthorize("Admin")]   // Only Admin can delete
         public async Task<IActionResult> DeleteAdjuster(int id)
         {
             var adjuster = await _context.Adjusters.FindAsync(id);
             if (adjuster == null)
                 return NotFound("Adjuster not found.");
 
+            // Find claims assigned to this adjuster
             var claims = await _context.Claims
                 .Where(c => c.AssignedAdjusterId == id)
                 .ToListAsync();

@@ -3,6 +3,7 @@ using AdjusterOptimizerAPI.Models;
 using AdjusterOptimizerAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
@@ -29,18 +30,18 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET USER BY ID (Admin or self)
+        // GET USER BY ID (Admin OR self)
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var sessionUserId = HttpContext.Session.GetInt32("USER_ID");
-            var sessionRole = HttpContext.Session.GetString("ROLE");
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (sessionUserId == null)
+            if (userId == null)
                 return Unauthorized("Not logged in.");
 
-            if (sessionRole != "Admin" && sessionUserId != id)
+            if (role != "Admin" && userId != id.ToString())
                 return Unauthorized("Access denied.");
 
             var user = await _context.Users.FindAsync(id);
@@ -51,9 +52,10 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // REGISTER NEW USER
+        // REGISTER NEW USER (Admin only)
         // ------------------------------------------------------------
         [HttpPost("register")]
+        [RoleAuthorize("Admin")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
             if (!ValidatePassword(req.Password))
@@ -63,7 +65,7 @@ namespace AdjusterOptimizerAPI.Controllers
                 .FirstOrDefaultAsync(u => u.Username == req.Username);
 
             if (existing != null)
-                return BadRequest("Username or email already exists.");
+                return BadRequest("Username already exists.");
 
             var user = new User
             {
@@ -79,53 +81,17 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // LOGIN
-        // ------------------------------------------------------------
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest req)
-        {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == req.Username);
-
-            if (user == null)
-                return Unauthorized("Invalid username or password.");
-
-            if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
-                return Unauthorized("Invalid username or password.");
-
-            // Store session
-            HttpContext.Session.SetInt32("USER_ID", user.UserId);
-            HttpContext.Session.SetString("ROLE", user.Role);
-
-            return Ok(new
-            {
-                message = "Login successful.",
-                role = user.Role,
-                userId = user.UserId
-            });
-        }
-
-        // ------------------------------------------------------------
-        // LOGOUT
-        // ------------------------------------------------------------
-        [HttpPost("logout")]
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Clear();
-            return Ok("Logged out.");
-        }
-
-        // ------------------------------------------------------------
         // CHANGE PASSWORD (self only)
         // ------------------------------------------------------------
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] string newPassword)
         {
-            var userId = HttpContext.Session.GetInt32("USER_ID");
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (userId == null)
                 return Unauthorized("Not logged in.");
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users.FindAsync(int.Parse(userId));
             if (user == null)
                 return NotFound("User not found.");
 
@@ -159,7 +125,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // VALIDATE PASSWORD
+        // PASSWORD VALIDATION
         // ------------------------------------------------------------
         private bool ValidatePassword(string password)
         {
@@ -169,5 +135,21 @@ namespace AdjusterOptimizerAPI.Controllers
                    password.Any(char.IsDigit) &&
                    password.Any(c => !char.IsLetterOrDigit(c));
         }
+    }
+
+    // ------------------------------------------------------------
+    // REQUEST MODELS
+    // ------------------------------------------------------------
+    public class RegisterRequest
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Role { get; set; } = "Adjuster";
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginRequest
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }

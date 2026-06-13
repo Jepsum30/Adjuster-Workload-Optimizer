@@ -1,8 +1,10 @@
 using AdjusterOptimizerAPI.Data;
 using AdjusterOptimizerAPI.Models;
+using ClaimModel = AdjusterOptimizerAPI.Models.Claim;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AdjusterOptimizerAPI.Attributes;
+using System.Security.Claims;
 
 namespace AdjusterOptimizerAPI.Controllers
 {
@@ -35,14 +37,15 @@ namespace AdjusterOptimizerAPI.Controllers
         [RoleAuthorize("Adjuster")]
         public async Task<IActionResult> GetMyClaims()
         {
-            var userId = HttpContext.Session.GetInt32("USER_ID");
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (userId == null)
                 return Unauthorized("Not logged in.");
 
-            // Claims assigned via assignments table
+            int adjusterId = int.Parse(userId);
+
             var claims = await _context.Assignments
-                .Where(a => a.AdjusterId == userId)
+                .Where(a => a.AdjusterId == adjusterId)
                 .Include(a => a.Claim)
                 .Select(a => a.Claim)
                 .ToListAsync();
@@ -51,7 +54,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // GET CLAIM BY ID
+        // GET CLAIM BY ID (Admin OR assigned Adjuster)
         // ------------------------------------------------------------
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -61,18 +64,20 @@ namespace AdjusterOptimizerAPI.Controllers
             if (claim == null)
                 return NotFound("Claim not found.");
 
-            var role = HttpContext.Session.GetString("ROLE");
-            var userId = HttpContext.Session.GetInt32("USER_ID");
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (role == "Admin")
                 return Ok(claim);
 
-            if (role == "Adjuster")
+            if (role == "Adjuster" && userId != null)
             {
-                bool assignedToAdjuster = await _context.Assignments
-                    .AnyAsync(a => a.ClaimId == id && a.AdjusterId == userId);
+                int adjusterId = int.Parse(userId);
 
-                if (assignedToAdjuster)
+                bool assigned = await _context.Assignments
+                    .AnyAsync(a => a.ClaimId == id && a.AdjusterId == adjusterId);
+
+                if (assigned)
                     return Ok(claim);
             }
 
@@ -84,7 +89,7 @@ namespace AdjusterOptimizerAPI.Controllers
         // ------------------------------------------------------------
         [HttpPost]
         [RoleAuthorize("Admin")]
-        public async Task<IActionResult> Create(Claim model)
+        public async Task<IActionResult> Create(ClaimModel model)
         {
             _context.Claims.Add(model);
             await _context.SaveChangesAsync();
@@ -98,7 +103,7 @@ namespace AdjusterOptimizerAPI.Controllers
         // ------------------------------------------------------------
         [HttpPut("{id}")]
         [RoleAuthorize("Admin")]
-        public async Task<IActionResult> Update(int id, Claim model)
+        public async Task<IActionResult> Update(int id, ClaimModel model)
         {
             if (id != model.ClaimId)
                 return BadRequest("Claim ID mismatch.");
@@ -128,7 +133,7 @@ namespace AdjusterOptimizerAPI.Controllers
         }
 
         // ------------------------------------------------------------
-        // SEARCH CLAIMS
+        // SEARCH CLAIMS (Admin OR assigned Adjuster)
         // ------------------------------------------------------------
         [HttpGet("search")]
         public async Task<IActionResult> SearchClaims(string query)
@@ -136,15 +141,17 @@ namespace AdjusterOptimizerAPI.Controllers
             if (string.IsNullOrWhiteSpace(query))
                 return BadRequest("Search query cannot be empty.");
 
-            var role = HttpContext.Session.GetString("ROLE");
-            var userId = HttpContext.Session.GetInt32("USER_ID");
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            IQueryable<Claim> baseQuery = _context.Claims;
+            IQueryable<ClaimModel> baseQuery = _context.Claims;
 
-            if (role == "Adjuster")
+            if (role == "Adjuster" && userId != null)
             {
+                int adjusterId = int.Parse(userId);
+
                 baseQuery = _context.Assignments
-                    .Where(a => a.AdjusterId == userId)
+                    .Where(a => a.AdjusterId == adjusterId)
                     .Include(a => a.Claim)
                     .Select(a => a.Claim!)
                     .Where(c => c != null)!;
